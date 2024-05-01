@@ -18,4 +18,4 @@ GamePlanManipulator is a project that explores game theoretic approaches to moti
 Contributions to GamePlanManipulator are welcome! Whether it's bug fixes, new features, or improvements to existing algorithms, feel free to fork the repository and submit a pull request.
 
 ## License
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE.txt).
