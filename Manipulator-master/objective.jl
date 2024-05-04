@@ -1,7 +1,5 @@
 struct InputCost
     value::Float64
-    gradient_x::Vector{Float64}
-    hessian_x::Matrix{Float64}
     gradient_u::Vector{Float64}
     hessian_u::Matrix{Float64}
     R::Matrix{Float64}
@@ -11,16 +9,8 @@ function evaluate(ic::InputCost, u)
     ic.value = 0.5*(u' * ic.R * u)
 end
 
-function gradient_x(ic::InputCost, x, u)
-    ic.gradient_x = zeros(length(x))
-end
-
 function gradient_u(ic::InputCost, x, u)
     ic.gradient_u = ic.R * u
-end
-
-function hessian_x(ic::InputCost, x, u)
-   ic.hessian_x = zeros(length(x), length(x))
 end
 
 function hessian_u(ic::InputCost, x, u)
@@ -45,15 +35,6 @@ end
 function hesian_x(rc::referenceCost)
     rc.hessian = rc.Q
 end
-
-function gradient_u(rc::referenceCost, x)
-    rc.gradient = 0
-end
-
-function hessian_u(rc::referenceCost)
-    rc.hessian = 0
-end
-
 
 
 
