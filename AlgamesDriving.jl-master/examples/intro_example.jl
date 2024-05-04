@@ -1,5 +1,5 @@
-#using AlgamesDriving
-#using Algames
+using AlgamesDriving
+using Algames
 using StaticArrays
 using LinearAlgebra
 using MeshCat
