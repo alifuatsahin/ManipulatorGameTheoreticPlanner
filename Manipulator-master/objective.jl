@@ -31,18 +31,27 @@ mutable struct referenceCost
     value::Float64
     gradient::Vector{Float64}
     hessian::Matrix{Float64}
+    Q::Matrix{Float64}
 end
 
-function evaluate(rc::referenceCost, x, Q)
-    rc.value = 0.5 * x' * Q * x
+function evaluate(rc::referenceCost, x)
+    rc.value = 0.5 * x' * rc.Q * x
 end
 
-function gradient_x(rc::referenceCost, x, Q)
-    rc.gradient = Q * x
+function gradient_x(rc::referenceCost, x)
+    rc.gradient = rc.Q * x
 end
 
-function hessian_x(rc::referenceCost, x, Q)
-    rc.hessian = Q
+function hesian_x(rc::referenceCost)
+    rc.hessian = rc.Q
+end
+
+function gradient_u(rc::referenceCost, x)
+    rc.gradient = 0
+end
+
+function hessian_u(rc::referenceCost)
+    rc.hessian = 0
 end
 
 
