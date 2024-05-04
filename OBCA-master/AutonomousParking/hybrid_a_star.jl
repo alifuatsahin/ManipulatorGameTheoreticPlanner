@@ -66,7 +66,7 @@ const H_COST = 1. # Heuristic cost; higher -> heuristic; 1.0
 const WB = 2.7 #[m]; 7.0
 const MAX_STEER = 0.6#deg2rad(35.0) #[rad]
 
-type Node
+struct Node
     xind::Int64 #x index
     yind::Int64 #y index
     yawind::Int64 #yaw index
@@ -79,7 +79,7 @@ type Node
     pind::Int64 # parent index
 end
 
-type Config
+struct Config
     minx::Int64
     miny::Int64
     minyaw::Int64
@@ -200,7 +200,7 @@ function update_node_with_analystic_expantion(current::Node,
                                             )
 
     apath = analystic_expantion(current, ngoal, obmap, c, kdtree, ox, oy)
-    if apath != nothing
+    if apath !== nothing
         # println("Find path! with analystic_expantion")
         current.x = vcat(current.x, apath.x[2:end-1])
         current.y = vcat(current.y, apath.y[2:end-1])
@@ -274,7 +274,7 @@ function analystic_expantion(n::Node, ngoal::Node, obmap::Array{Bool,2}, c::Conf
                                            ngoal.x[end], ngoal.y[end], ngoal.yaw[end],
                                            max_curvature, step_size=MOTION_RESOLUTION)
 
-    if path == nothing
+    if path === nothing
         return nothing
     end
 
@@ -614,7 +614,7 @@ function main()
     @time rx, ry, ryaw = calc_hybrid_astar_path(sx, sy, syaw, gx, gy, gyaw, ox, oy, XY_GRID_RESOLUTION, YAW_GRID_RESOLUTION, OB_MAP_RESOLUTION)
 
     plot(ox, oy, ".k",label="obstacles")
-    if rx != nothing
+    if rx !== nothing
         plot(rx, ry, "-r",label="Hybrid A* path")
     end
  

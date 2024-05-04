@@ -30,7 +30,7 @@ using PyPlot
 const VEHICLE_RADIUS = 2.5# const GRID_RESOLUTION = 1.0 #[m], def 2.0
 const H_WEIGHT = 1.1	# weight for heuristic function
 
-type Node
+struct Node
     x::Int64  #x index
     y::Int64  #y index
 	z::Int64  #z index (added)	
