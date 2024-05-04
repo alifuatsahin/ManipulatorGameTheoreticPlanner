@@ -48,5 +48,21 @@ println(hessian_x(ic, x, u))
 println(hessian_u(ic, x, u))
 
 
+mutable struct referenceCost
+    value::Float64
+    gradient::Vector{Float64}
+    hessian::Matrix{Float64}
+end
 
+function evaluate(rc::referenceCost, x, Q)
+    rc.value = 0.5 * x' * Q * x
+end
+
+function gradient_x(rc::referenceCost, x, Q)
+    rc.gradient = Q * x
+end
+
+function hesian_x(rc::referenceCost, x, Q)
+    rc.hessian = Q
+end
 
