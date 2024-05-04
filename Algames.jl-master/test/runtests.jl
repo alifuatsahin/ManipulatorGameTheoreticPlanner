@@ -1,4 +1,4 @@
-using Test
+using TestP
 using Algames
 using Altro
 using BenchmarkTools
