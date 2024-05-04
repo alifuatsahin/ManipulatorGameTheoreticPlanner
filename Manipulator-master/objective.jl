@@ -67,3 +67,11 @@ function hesian_x(rc::referenceCost)
     rc.hessian = rc.Q
 end
 
+function gradient_u(rc::referenceCost, x)
+    rc.gradient = 0
+end
+
+function hessian_u(rc::referenceCost)
+    rc.hessian = 0
+end
+
