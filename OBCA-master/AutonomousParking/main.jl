@@ -26,7 +26,7 @@
 ###############
 
 # function defined in setup.jl
-clear()
+# clear()
 using PyCall
 close("all")
 
