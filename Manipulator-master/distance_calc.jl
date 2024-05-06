@@ -13,7 +13,7 @@ h = [l/2; l/2; w/2; w/2]
 F = [1 0; -1 0; 0 1; 0 -1]
 g = [l/2; l/2; w/2; w/2]
 
-th1 = 0
+th1 = pi/2
 th2 = 0
 
 R1 = [cos(th1) sin(th1); -sin(th1) cos(th1)]
