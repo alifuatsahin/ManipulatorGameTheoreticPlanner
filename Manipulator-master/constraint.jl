@@ -41,5 +41,7 @@ end
 x = [θ1_val; θ2_val; θ3_val; θ4_val]
 
 Hessian_f = ForwardDiff.hessian(f, x)
+gradient_f = ForwardDiff.gradient(f, x)
 
 println(Hessian_f)
+println(gradient_f)
