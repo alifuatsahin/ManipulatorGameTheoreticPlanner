@@ -3,6 +3,7 @@ using Ipopt
 using LinearAlgebra
 using Plots
 using LazySets
+using SCS
 
 l = 1.0
 w = 0.2
@@ -28,18 +29,17 @@ function objective(x)
     return (H*t1 - h)'* x[1:4] + (F*t2 - g)'*x[5:8]
 end 
 
-model = Model(Ipopt.Optimizer)
+model = Model(SCS.Optimizer)
 
-@variable(model, x[i = 1:10])  
+@variable(model, x[i = 1:8])  
 
 @objective(model, Max, objective(x))
 
 @constraint(model, c[i=1:8], x[i] >= 0)
 
-@NLconstraint(model, x[9]^2 + x[10]^2 <= 1)
+@constraint(model,[1;R2'* F'*x[5:8]] in SecondOrderCone())
 
-@constraint(model, R1'* H'*x[1:4] + x[9:10] .== 0)  
-@constraint(model, R2'* F'*x[5:8] - x[9:10] .== 0)  
+@constraint(model,R1'*H'*x[1:4] + R2'* F'*x[5:8] .== 0)
 
 optimize!(model)
 
@@ -48,8 +48,6 @@ println("x[1]:")
 println(value.(x[1:4]))
 println("x[2]:")
 println(value.(x[5:8]))
-println("x[3]:")
-println(value.(x[9:10]))
 
 println("Objective value:")
 println(objective(value.(x)))
