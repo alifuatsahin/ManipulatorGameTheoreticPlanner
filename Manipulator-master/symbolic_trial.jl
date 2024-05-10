@@ -214,18 +214,6 @@ function get_H(x_traj)
     return H
 end
 
-function blockdiag(matrices...)
-    n = length(matrices)
-    sizes = [size(m) for m in matrices]
-    I = fill(0, n)
-    J = fill(0, n)
-    for i in 1:n
-        I[i] = sum([sizes[j][1] for j in 1:i])
-        J[i] = sum([sizes[j][2] for j in 1:i])
-    end
-    return hvcat((I..., J...), [m for m in matrices]..., fill(0, I[end], J[end])...)
-end
-
 H_a = get_H(x_traj)
 
 
