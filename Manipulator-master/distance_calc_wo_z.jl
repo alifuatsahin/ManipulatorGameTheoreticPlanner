@@ -6,7 +6,7 @@ using LazySets
 using SCS
 using Polyhedra
 
-l = 6.0
+l = 10.0
 w = 3
 
 H = [1 0; -1 0; 0 1; 0 -1]
@@ -16,18 +16,18 @@ F = [1 0; -1 0; 0 1; 0 -1]
 g = [l/2; l/2; w/2; w/2]
 
 th1 = pi/2
-th2 = 3*pi/2
+th2 = 2*pi/7
 
-R1 = [cos(th1) sin(th1); -sin(th1) cos(th1)]
+R1 = [cos(th1) -sin(th1); sin(th1) cos(th1)]
 
 R2 = [cos(th2) sin(th2); -sin(th2) cos(th2)]
 
 t1 = [0; 0]
 
-t2 = [0; 10]
+t2 = [0; 15]
 
 function objective(x)
-    return (H*t1 - h)'* x[1:4] + (F*t2 - g)'*x[5:8]
+    return (-H*R1*t1 - h)'* x[1:4] + (-F*R2*t2 - g)'*x[5:8]
 end 
 
 model = Model(SCS.Optimizer)
@@ -55,9 +55,9 @@ println(objective(value.(x)))
 
 
 H_transformed = H * R1
-h_transformed = h - H * t1
+h_transformed = h + H * R1 * t1
 F_transformed = F * R2
-g_transformed = g - F * t2
+g_transformed = g + F * R2 * t2
 
 # Create LazySets for transformed sets
 H_set = Polyhedra.hrep(H_transformed, h_transformed)
@@ -69,7 +69,7 @@ p2 = polyhedron(F_set)
 plot(p, lab="Hx .<= h")
 plot!(p2, lab="Fx .<= g")
 
-plot!(xlims=(-20,20), ylims=(-20, 20))
+plot!(xlims=(-30,30), ylims=(-30, 30))
 
 
 

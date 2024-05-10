@@ -31,11 +31,11 @@ players[3] = Player(model, roadway.lane[3],
 sce = Scenario(model, roadway, players)
 
 # Create Dynamic Game Problem
-N = 20 # number of time steps
+N = 2 # number of time steps
 dt = 0.1 # time step
 solver_opts = Options() # solver options
 prob = GameProblem(N, dt, sce, solver_opts) # atonomous driving problem
-@time newton_solve!(prob) # solve the problem
+newton_solve!(prob) # solve the problem
 
 # Plotting vehicles' trajectories and the solver's progress
 using Plots
