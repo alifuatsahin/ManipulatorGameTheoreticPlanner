@@ -28,6 +28,8 @@ const g = [l/2; l/2; w/2; w/2]
 const lambda = rand(20,36)
 const mu = rand(20,8)
 
+const x0 = rand(1,64)
+
 t_1(x) = [l1 * cos(x[1]); l1 * sin(x[1])]
 
 t_2(x) = [l1 * cos(x[1]) + l2 * cos(x[2]); l1 * sin(x[1]) + l2 * sin(x[2])]
@@ -117,10 +119,71 @@ Polyhedral_4(x, lambda, idx1 = 2, idx2 = 1) = begin
     end
 end
 
+@variables x_state[1:20, 1:64]
 
-function State_Transition(x, x_prev, dt)
-    return dot(x[57:60],(x[1:4] - x_prev[1:4] - dt * x[5:8])) + dot(x[61:64],(x[1:4] - x_prev[1:4] - dt * x[5:8]))
+x_state_y = [x_state...]
+
+State_Transition_Mu(x_state_flat, horizon) = begin
+    D = 0
+    x_state = reshape(x_state_flat, 20, 64)
+    for i in 1:horizon
+        if i == 1
+            D += dot(x_state[i, 57:60],(x_state[i, 1:4] - x0[1, 1:4])) + dot(x_state[i, 61:64],(x_state[i, 1:4] - x0[1, 1:4]))
+        else
+            D += dot(x_state[i, 57:60],(x_state[i, 1:4] - x_state[i-1, 1:4] - dt * x_state[i, 5:8])) + dot(x_state[i, 61:64],(x_state[i, 1:4] - x_state[i-1, 1:4] - dt * x_state[i, 5:8]))
+        end
+    end 
+    return D
 end
+
+@variables D[1:80]
+
+State_Transition(x_state_flat, horizon) = begin
+    x_state = reshape(x_state_flat, 20, 64)
+    dt = 0.1 
+    idx = 1
+    for i in 1:horizon
+        if i ==1
+            for j in 1:4
+                D[idx] = x_state[i, j] - x0[1, j] - dt * x_state[i, j+4]
+                idx += 1
+            end
+        else
+            for j in 1:4
+                D[idx] = x_state[i, j] - x_state[i-1, j] - dt * x_state[i, j+4]
+                idx += 1
+            end
+        end
+    end 
+    return D
+end
+
+State_Transition_Scalar(x_state_flat, horizon) = begin
+    D = zeros(80,1)
+    x_state = reshape(x_state_flat, 20, 64)
+    dt = 0.1 
+    idx = 1
+    for i in 1:horizon
+        if i ==1
+            for j in 1:4
+                D[idx] = x_state[i, j] - x0[1, j] - dt * x_state[i, j+4]
+                idx += 1
+            end
+        else
+            for j in 1:4
+                D[idx] = x_state[i, j] - x_state[i-1, j] - dt * x_state[i, j+4]
+                idx += 1
+            end
+        end
+    end 
+    return D
+end
+
+x_1_state = vcat([x_state[i, vcat(1:6, 9:32)]' for i in 1:size(x_state, 1)]...)
+x_2_state = vcat([x_state[i, vcat(1:4, 7:8, 33:56)]' for i in 1:size(x_state, 1)]...)
+
+x1state_y = [x_1_state...]
+x2state_y = [x_2_state...]
 
 y = [x...]
 
@@ -174,12 +237,16 @@ x1_traj = [x_traj[1, 1:6]; x_traj[1, 9:32]]
 x2_traj = [x_traj[1, 1:4]; x_traj[1, 7:8]; x_traj[1, 33:56]]
 
 
-state_transition_1 = Symbolics.gradient(State_Transition(x, x_prev, dt), x1, simplify=true)
-state_transition_2 = Symbolics.gradient(State_Transition(x, x_prev, dt), x2, simplify=true)
+state_transition_1 = Symbolics.gradient(State_Transition_Mu(x_state_y, 20), x1state_y, simplify=true)
+state_transition_2 = Symbolics.gradient(State_Transition_Mu(x_state_y, 20), x2state_y, simplify=true)
+
+state_transition_1_hess = Symbolics.jacobian(state_transition_1, x_state_y, simplify=true)
+state_transition_2_hess = Symbolics.jacobian(state_transition_2, x_state_y, simplify=true)
+
 
 total_grad_1 = (ref_grad_1 + input_grad_1 + poly_1_grad_1_23 + poly_1_grad_1_24 + poly_1_grad_1_14 +
                  poly_2_grad_1_23 + poly_2_grad_1_24 + poly_2_grad_1_14 + poly_3_grad_1_23 + 
-                 poly_3_grad_1_24 + poly_3_grad_1_14 + poly_4_grad_1_23 + poly_4_grad_1_24 + poly_4_grad_1_14 + state_transition_1)
+                 poly_3_grad_1_24 + poly_3_grad_1_14 + poly_4_grad_1_23 + poly_4_grad_1_24 + poly_4_grad_1_14)
 
 total_grad_2 = (ref_grad_2 + input_grad_2 + poly_1_grad_2_23 + poly_1_grad_2_24 + poly_1_grad_2_14 + 
                 poly_2_grad_2_23 + poly_2_grad_2_24 + poly_2_grad_2_14 + poly_3_grad_2_23 + poly_3_grad_2_24 + 
@@ -189,16 +256,19 @@ total_grad_2 = (ref_grad_2 + input_grad_2 + poly_1_grad_2_23 + poly_1_grad_2_24 
 x1_vals = Dict(x[i] => x1_traj[i] for i in 1:30)   
 x2_vals = Dict(x[i] => x2_traj[i] for i in 1:30)
 
-total_grad_1 = substitute(total_grad_1, (x1_vals))
-total_grad_2 = substitute(total_grad_2, (x2_vals))
-
 total_hess_1 = Symbolics.jacobian(total_grad_1, x, simplify=true)
 total_hess_2 = Symbolics.jacobian(total_grad_2, x, simplify=true)
 
+state_transition_inside = Symbolics.jacobian(State_Transition(x_state_y, 20), x_state_y, simplify=true)
 
 function get_H(x_traj)
     H_list1 = []
     H_list2 = []
+    x_flat = [x_traj...]
+    x_state_vals = Dict(x_state[i] => x_flat[i] for i in 1:1280)
+    S1 = substitute.(state_transition_1_hess, (x_state_vals,))
+    S2 = substitute.(state_transition_2_hess, (x_state_vals,))
+    ST_wo_mu = substitute.(state_transition_inside, (x_state_vals,))
     for j in 1:20
         x_vals = Dict(x[i] => x_traj[j,i] for i in 1:64)
         V1 = substitute.(total_hess_1, (x_vals,))
@@ -208,13 +278,41 @@ function get_H(x_traj)
         push!(H_list1, H1)
         push!(H_list2, H2)
     end
-    H_diag1 = BlockDiagonal([H_list1...])
-    H_diag2 = BlockDiagonal([H_list2...])
-    H = vcat(H_diag1, H_diag2)
+    H_diag1 = BlockDiagonal([H_list1...]) + S1
+    H_diag2 = BlockDiagonal([H_list2...]) + S2
+    H = vcat(H_diag1, H_diag2, ST_wo_mu)
     return H
 end
 
+function get_G(x_traj)
+    G_list1 = []
+    G_list2 = []
+    x_flat = [x_traj...]
+    x_state_vals = Dict(x_state[i] => x_flat[i] for i in 1:1280)
+    S1 = substitute.(state_transition_1, (x_state_vals,))
+    S2 = substitute.(state_transition_2, (x_state_vals,))
+    ST_wo_mu = State_Transition_Scalar(x_traj, 20)
+    for j in 1:20
+        x_vals = Dict(x[i] => x_traj[j,i] for i in 1:64)
+        V1 = substitute.(total_grad_1, (x_vals,))
+        V2 = substitute.(total_grad_2, (x_vals,))
+        G1 = Symbolics.value.(V1)
+        G2 = Symbolics.value.(V2)
+        push!(G_list1, G1)
+        push!(G_list2, G2)
+
+    end
+    G1 = vcat(G_list1...)
+    G2 = vcat(G_list2...)
+    G = vcat(G1 + S1, G2 + S2, ST_wo_mu)
+    return G
+
+end
+
 H_a = get_H(x_traj)
+G_a = get_G(x_traj)
+
+
 
 
 
