@@ -6,9 +6,9 @@ using StaticArrays
 using BlockDiagonals
 using LinearSolve
 
-const R = [4.0 0.0; 0.0 4.0]
-const Q = I(4)
-const x_ref = [0.0, 0.0, 0.0, 0.0]
+R = 0.01*[1.0 0.0; 0.0 1.0]
+Q = 50*I(4)
+x_ref = [pi*2/3,pi*2/3, pi/6, pi/6]
 
 const l1 = 6.0
 const l2 = 6.0
@@ -17,7 +17,7 @@ const l4 = 6.0
 const l = 6.0
 const w = 3
 
-const d = 10.0
+const d = 30.0
 
 const H = [1 0; -1 0; 0 1; 0 -1]
 const h = [l/2; l/2; w/2; w/2]
@@ -28,7 +28,14 @@ const g = [l/2; l/2; w/2; w/2]
 const lambda = rand(20,36)
 const mu = rand(20,8)
 
-const x0 = rand(1,64)
+
+const θ_init = [3*pi/4, 3*pi/4, pi/4, pi/4]
+
+const x_init = reshape(vcat(θ_init, rand(60)), 1, 64)
+
+const x0 = x_init
+const dt = 0.1
+const horizon = 1
 
 t_1(x) = [l1 * cos(x[1]); l1 * sin(x[1])]
 
@@ -73,11 +80,11 @@ Polyhedral_1(x, lambda, idx1, idx2) = begin
     R2 = R_2(x[idx2])
 
     if idx1 == 2 && idx2 == 3 
-        return -lambda[1]*((H*R1*t1 - h)'* x[9:12] + (F*R2*t2 - g)'*x[21:24] + (H*R1*t1 - h)'* x[33:36] + (F*R2*t2 - g)'*x[45:48])
+        return -lambda[1]*((-H*R1*t1 - h)'* x[9:12] + (-F*R2*t2 - g)'*x[21:24] + (-H*R1*t1 - h)'* x[33:36] + (-F*R2*t2 - g)'*x[45:48])
     elseif idx1 == 2 && idx2 == 4
-        return -lambda[13]*((H*R1*t1 - h)'* x[13:16] + (F*R2*t2 - g)'*x[25:28] + (H*R1*t1 - h)'* x[37:40] + (F*R2*t2 - g)'*x[49:52])
+        return -lambda[13]*((-H*R1*t1 - h)'* x[13:16] + (-F*R2*t2 - g)'*x[25:28] + (-H*R1*t1 - h)'* x[37:40] + (-F*R2*t2 - g)'*x[49:52])
     elseif idx1 == 1 && idx2 == 4 
-        return -lambda[25]*((H*R1*t1 - h)'* x[17:20] + (F*R2*t2 - g)'*x[29:32] + (H*R1*t1 - h)'* x[41:44] + (F*R2*t2 - g)'*x[53:56])
+        return -lambda[25]*((-H*R1*t1 - h)'* x[17:20] + (-F*R2*t2 - g)'*x[29:32] + (-H*R1*t1 - h)'* x[41:44] + (-F*R2*t2 - g)'*x[53:56])
     end 
 end
 
@@ -119,63 +126,82 @@ Polyhedral_4(x, lambda, idx1 = 2, idx2 = 1) = begin
     end
 end
 
-@variables x_state[1:20, 1:64]
+@variables x_state[1:horizon, 1:64]
 
 x_state_y = [x_state...]
 
-State_Transition_Mu(x_state_flat, horizon) = begin
+State_Transition_Mu(x_state_flat) = begin
     D = 0
-    x_state = reshape(x_state_flat, 20, 64)
-    for i in 1:horizon
-        if i == 1
-            D += dot(x_state[i, 57:60],(x_state[i, 1:4] - x0[1, 1:4])) + dot(x_state[i, 61:64],(x_state[i, 1:4] - x0[1, 1:4]))
-        else
-            D += dot(x_state[i, 57:60],(x_state[i, 1:4] - x_state[i-1, 1:4] - dt * x_state[i, 5:8])) + dot(x_state[i, 61:64],(x_state[i, 1:4] - x_state[i-1, 1:4] - dt * x_state[i, 5:8]))
-        end
+    x_state = reshape(x_state_flat, horizon, 64)
+    if horizon != 1
+        for i in 1:horizon
+            if i == 1
+                D += dot(x_state[i, 57:60],(x_state[i, 1:4] - x0[1, 1:4])) + dot(x_state[i, 61:64],(x_state[i, 1:4] - x0[1, 1:4]))
+            else
+                D += dot(x_state[i, 57:60],(x_state[i, 1:4] - x_state[i-1, 1:4] - dt * x_state[i, 5:8])) + dot(x_state[i, 61:64],(x_state[i, 1:4] - x_state[i-1, 1:4] - dt * x_state[i, 5:8]))
+            end
+        end 
+    else
+        D = dot(x_state[57:60],(x_state[1, 1:4] - x0[1:4])) + dot(x_state[61:64],(x_state[1, 1:4] - x0[1:4]))
     end 
+
     return D
 end
 
-@variables D[1:80]
+@variables D[1:4*horizon]
 
-State_Transition(x_state_flat, horizon) = begin
-    x_state = reshape(x_state_flat, 20, 64)
+State_Transition(x_state_flat) = begin
+    x_state = reshape(x_state_flat, horizon, 64)
     dt = 0.1 
     idx = 1
-    for i in 1:horizon
-        if i ==1
-            for j in 1:4
-                D[idx] = x_state[i, j] - x0[1, j] - dt * x_state[i, j+4]
-                idx += 1
+    if horizon != 1
+        for i in 1:horizon
+            if i ==1
+                for j in 1:4
+                    D[idx] = x_state[i, j] - x0[1, j] - dt * x_state[i, j+4]
+                    idx += 1
+                end
+            else
+                for j in 1:4
+                    D[idx] = x_state[i, j] - x_state[i-1, j] - dt * x_state[i, j+4]
+                    idx += 1
+                end
             end
-        else
-            for j in 1:4
-                D[idx] = x_state[i, j] - x_state[i-1, j] - dt * x_state[i, j+4]
-                idx += 1
-            end
+        end 
+    else
+        for j in 1:4
+            D[idx] = x_state[1, j] - x0[1, j] - dt * x_state[1, j+4]
+            idx += 1
         end
-    end 
+    end
     return D
 end
 
-State_Transition_Scalar(x_state_flat, horizon) = begin
-    D = zeros(80,1)
-    x_state = reshape(x_state_flat, 20, 64)
+State_Transition_Scalar(x_state_flat) = begin
+    D = zeros(4*horizon,1)
+    x_state = reshape(x_state_flat, horizon, 64)
     dt = 0.1 
     idx = 1
-    for i in 1:horizon
-        if i ==1
-            for j in 1:4
-                D[idx] = x_state[i, j] - x0[1, j] - dt * x_state[i, j+4]
-                idx += 1
+    if horizon != 1
+        for i in 1:horizon
+            if i ==1
+                for j in 1:4
+                    D[idx] = x_state[i, j] - x0[1, j] - dt * x_state[i, j+4]
+                    idx += 1
+                end
+            else
+                for j in 1:4
+                    D[idx] = x_state[i, j] - x_state[i-1, j] - dt * x_state[i, j+4]
+                    idx += 1
+                end
             end
-        else
-            for j in 1:4
-                D[idx] = x_state[i, j] - x_state[i-1, j] - dt * x_state[i, j+4]
-                idx += 1
-            end
+        end 
+    else
+        for j in 1:4
+            D[idx] = x_state[1, j] - x0[1, j] - dt * x_state[1, j+4]
+            idx += 1
         end
-    end 
+    end
     return D
 end
 
@@ -230,15 +256,8 @@ poly_4_grad_1_14 = Symbolics.gradient(Polyhedral_4(x, lambda[1,:], 1, 4), x1, si
 poly_4_grad_2_14 = Symbolics.gradient(Polyhedral_4(x, lambda[1,:], 1, 4), x2, simplify=true)
 
 
-x_traj = rand(20, 64)
-x_prev = rand(64)
-dt = 0.1
-x1_traj = [x_traj[1, 1:6]; x_traj[1, 9:32]]
-x2_traj = [x_traj[1, 1:4]; x_traj[1, 7:8]; x_traj[1, 33:56]]
-
-
-state_transition_1 = Symbolics.gradient(State_Transition_Mu(x_state_y, 20), x1state_y, simplify=true)
-state_transition_2 = Symbolics.gradient(State_Transition_Mu(x_state_y, 20), x2state_y, simplify=true)
+state_transition_1 = Symbolics.gradient(State_Transition_Mu(x_state_y), x1state_y, simplify=true)
+state_transition_2 = Symbolics.gradient(State_Transition_Mu(x_state_y), x2state_y, simplify=true)
 
 state_transition_1_hess = Symbolics.jacobian(state_transition_1, x_state_y, simplify=true)
 state_transition_2_hess = Symbolics.jacobian(state_transition_2, x_state_y, simplify=true)
@@ -253,33 +272,40 @@ total_grad_2 = (ref_grad_2 + input_grad_2 + poly_1_grad_2_23 + poly_1_grad_2_24 
                 poly_3_grad_2_14 + poly_4_grad_2_23 + poly_4_grad_2_24 + poly_4_grad_2_14)
 
 
-x1_vals = Dict(x[i] => x1_traj[i] for i in 1:30)   
-x2_vals = Dict(x[i] => x2_traj[i] for i in 1:30)
 
 total_hess_1 = Symbolics.jacobian(total_grad_1, x, simplify=true)
 total_hess_2 = Symbolics.jacobian(total_grad_2, x, simplify=true)
 
-state_transition_inside = Symbolics.jacobian(State_Transition(x_state_y, 20), x_state_y, simplify=true)
+state_transition_inside = Symbolics.jacobian(State_Transition(x_state_y), x_state_y, simplify=true)
 
 function get_H(x_traj)
     H_list1 = []
     H_list2 = []
+    H1 = H2 = []
     x_flat = [x_traj...]
-    x_state_vals = Dict(x_state[i] => x_flat[i] for i in 1:1280)
+    x_state_vals = Dict(x_state[i] => x_flat[i] for i in 1:64*horizon)
     S1 = substitute.(state_transition_1_hess, (x_state_vals,))
     S2 = substitute.(state_transition_2_hess, (x_state_vals,))
     ST_wo_mu = substitute.(state_transition_inside, (x_state_vals,))
-    for j in 1:20
+    for j in 1:horizon
         x_vals = Dict(x[i] => x_traj[j,i] for i in 1:64)
         V1 = substitute.(total_hess_1, (x_vals,))
         V2 = substitute.(total_hess_2, (x_vals,))
         H1 = reshape(Symbolics.value.(V1), 30, 64)
         H2 = reshape(Symbolics.value.(V2), 30, 64)
-        push!(H_list1, H1)
-        push!(H_list2, H2)
+        if horizon != 1
+            push!(H_list1, H1)
+            push!(H_list2, H2)
+        end
     end
-    H_diag1 = BlockDiagonal([H_list1...]) + Symbolics.value.(S1)
-    H_diag2 = BlockDiagonal([H_list2...]) + Symbolics.value.(S2)
+    if horizon == 1
+        H_diag1 = H1 + Symbolics.value.(S1)
+        H_diag2 = H2 + Symbolics.value.(S2)
+    else
+        H_diag1 = BlockDiagonal([H_list1...]) + Symbolics.value.(S1)
+        H_diag2 = BlockDiagonal([H_list2...]) + Symbolics.value.(S2)
+    end
+
     H = vcat(H_diag1, H_diag2, Symbolics.value.(ST_wo_mu))
     return convert(Matrix{Float64}, H)
 end
@@ -288,11 +314,11 @@ function get_G(x_traj)
     G_list1 = []
     G_list2 = []
     x_flat = [x_traj...]
-    x_state_vals = Dict(x_state[i] => x_flat[i] for i in 1:1280)
+    x_state_vals = Dict(x_state[i] => x_flat[i] for i in 1:64*horizon)
     S1 = substitute.(state_transition_1, (x_state_vals,))
     S2 = substitute.(state_transition_2, (x_state_vals,))
-    ST_wo_mu = State_Transition_Scalar(x_traj, 20)
-    for j in 1:20
+    ST_wo_mu = State_Transition_Scalar(x_traj)
+    for j in 1:horizon
         x_vals = Dict(x[i] => x_traj[j,i] for i in 1:64)
         V1 = substitute.(total_grad_1, (x_vals,))
         V2 = substitute.(total_grad_2, (x_vals,))
@@ -313,7 +339,7 @@ end
 function inner_loop(x_init)
     x_traj = x_init
     x_prev = x_init
-    for i = 1:20
+    for i = 1:2000
         println("Iteration: ", i)
         H_a = get_H(x_traj)
         G_a = get_G(x_traj)
@@ -322,17 +348,21 @@ function inner_loop(x_init)
     
         Hinv = pinv(QR.R) * QR.Q'
         
-        Δtraj = - Hinv * G_a
+        Δtraj = - pinv(H_a)* G_a
 
         x_prev = x_traj
         x_traj_flat = [x_traj...]
         α = line_search(x_traj_flat, G_a, Δtraj)
 
+        print("α: ", α)
+
         x_traj_flat += α * Δtraj
 
-        x_traj = reshape(x_traj_flat, 20, 64)
+        x_traj = reshape(x_traj_flat, horizon, 64)
+
         println("norm of x_prev - x_traj: ", norm(x_prev - x_traj))
-        if norm(x_prev - x_traj) < 1e-6
+
+        if norm(x_prev - x_traj) < 0.01
             break
         end
     end
@@ -349,6 +379,6 @@ function line_search(y, G, δy, β=0.4, τ=0.5)
 end
 
 
-x_converged = inner_loop(x_traj)
+x_converged = inner_loop(x_init)
 
 
