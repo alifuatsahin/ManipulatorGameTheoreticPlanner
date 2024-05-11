@@ -155,7 +155,6 @@ end
 
 State_Transition(x_state_flat) = begin
     x_state = reshape(x_state_flat, 64, horizon)'
-    dt = 0.1 
     idx = 1
     if horizon != 1
         for i in 1:horizon
@@ -183,7 +182,6 @@ end
 State_Transition_Scalar(x_state_flat) = begin
     D = zeros(4*horizon,1)
     x_state = reshape(x_state_flat, 64, horizon)'
-    dt = 0.1 
     idx = 1
     if horizon != 1
         for i in 1:horizon
@@ -287,7 +285,8 @@ function get_H(x_traj)
     H_list2 = []
     H1 = H2 = []
     x_flat = [x_traj'...]
-    x_state_vals = Dict(x_state[i] => x_flat[i] for i in 1:64*horizon)
+    x_state_flat = [x_state'...]
+    x_state_vals = Dict(x_state_flat[i] => x_flat[i] for i in 1:64*horizon)
     S1 = substitute.(state_transition_1_hess, (x_state_vals,))
     S2 = substitute.(state_transition_2_hess, (x_state_vals,))
     ST_wo_mu = substitute.(state_transition_inside, (x_state_vals,))
@@ -297,10 +296,8 @@ function get_H(x_traj)
         V2 = substitute.(total_hess_2, (x_vals,))
         H1 = reshape(Symbolics.value.(V1), 30, 64)
         H2 = reshape(Symbolics.value.(V2), 30, 64)
-        if horizon != 1
-            push!(H_list1, H1)
-            push!(H_list2, H2)
-        end
+        push!(H_list1, H1)
+        push!(H_list2, H2)
     end
     H_a = []
     for i in 1:horizon
@@ -325,7 +322,8 @@ function get_G(x_traj)
     G_list1 = []
     G_list2 = []
     x_flat = [x_traj'...]
-    x_state_vals = Dict(x_state[i] => x_flat[i] for i in 1:64*horizon)
+    x_state_flat = [x_state'...]
+    x_state_vals = Dict(x_state_flat[i] => x_flat[i] for i in 1:64*horizon)
     S1 = substitute.(state_transition_1, (x_state_vals,))
     S2 = substitute.(state_transition_2, (x_state_vals,))
     ST_wo_mu = State_Transition_Scalar(x_traj)
@@ -391,7 +389,10 @@ end
 
 function line_search(y, G, δy, β=0.45, τ=0.5)
     α = 1.0
-    while norm(G'*(y + α*δy), 1) <= (1 - α*β)*norm(G'*y, 1)
+    y_new = y + α*δy
+    y_new = reshape(y_new, 64, horizon)'
+    G_alpha = get_G(y_new)
+    while norm(G_alpha,2) <= (1 - α*β)*norm(G, 2)
         α *= τ
     end
     return α
