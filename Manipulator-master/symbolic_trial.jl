@@ -6,8 +6,8 @@ using StaticArrays
 using BlockDiagonals
 using LinearSolve
 
-R = 0.01*[1.0 0.0; 0.0 1.0]
-Q = 50*I(4)
+R = 10*[1.0 0.0; 0.0 1.0]
+Q = 10*I(4)
 x_ref = [pi*2/3,pi*2/3, pi/6, pi/6]
 
 const l1 = 6.0
@@ -17,7 +17,8 @@ const l4 = 6.0
 const l = 6.0
 const w = 3
 
-const d = 30.0
+const d = 100.0
+horizon = 2
 
 const H = [1 0; -1 0; 0 1; 0 -1]
 const h = [l/2; l/2; w/2; w/2]
@@ -25,17 +26,19 @@ const h = [l/2; l/2; w/2; w/2]
 const F = [1 0; -1 0; 0 1; 0 -1]
 const g = [l/2; l/2; w/2; w/2]
 
-const lambda = rand(20,36)
-const mu = rand(20,8)
+const lambda = rand(1,36) * 1e-8
+const dt = 0.25
 
 
 const θ_init = [3*pi/4, 3*pi/4, pi/4, pi/4]
 
-const x_init = reshape(vcat(θ_init, rand(60)), 1, 64)
+x_init = reshape(vcat(θ_init, rand(60)), 1, 64)
+x_init = repeat(x_init, horizon, 1)
 
-const x0 = x_init
-const dt = 0.1
-const horizon = 1
+
+const x0 = reshape(vcat(θ_init, rand(60)), 1, 64)
+
+
 
 t_1(x) = [l1 * cos(x[1]); l1 * sin(x[1])]
 
@@ -80,11 +83,11 @@ Polyhedral_1(x, lambda, idx1, idx2) = begin
     R2 = R_2(x[idx2])
 
     if idx1 == 2 && idx2 == 3 
-        return -lambda[1]*((-H*R1*t1 - h)'* x[9:12] + (-F*R2*t2 - g)'*x[21:24] + (-H*R1*t1 - h)'* x[33:36] + (-F*R2*t2 - g)'*x[45:48])
+        return lambda[1]*((H*R1*t1 + h)'* x[9:12] + (F*R2*t2 + g)'*x[21:24] + (H*R1*t1 + h)'* x[33:36] + (F*R2*t2 + g)'*x[45:48])
     elseif idx1 == 2 && idx2 == 4
-        return -lambda[13]*((-H*R1*t1 - h)'* x[13:16] + (-F*R2*t2 - g)'*x[25:28] + (-H*R1*t1 - h)'* x[37:40] + (-F*R2*t2 - g)'*x[49:52])
+        return lambda[13]*((H*R1*t1 + h)'* x[13:16] + (F*R2*t2 + g)'*x[25:28] + (H*R1*t1 + h)'* x[37:40] + (F*R2*t2 + g)'*x[49:52])
     elseif idx1 == 1 && idx2 == 4 
-        return -lambda[25]*((-H*R1*t1 - h)'* x[17:20] + (-F*R2*t2 - g)'*x[29:32] + (-H*R1*t1 - h)'* x[41:44] + (-F*R2*t2 - g)'*x[53:56])
+        return lambda[25]*((H*R1*t1 + h)'* x[17:20] + (F*R2*t2 + g)'*x[29:32] + (H*R1*t1 + h)'* x[41:44] + (F*R2*t2 + g)'*x[53:56])
     end 
 end
 
@@ -128,11 +131,11 @@ end
 
 @variables x_state[1:horizon, 1:64]
 
-x_state_y = [x_state...]
+x_state_y = [x_state'...]
 
 State_Transition_Mu(x_state_flat) = begin
     D = 0
-    x_state = reshape(x_state_flat, horizon, 64)
+    x_state = reshape(x_state_flat,64,horizon)'
     if horizon != 1
         for i in 1:horizon
             if i == 1
@@ -151,7 +154,7 @@ end
 @variables D[1:4*horizon]
 
 State_Transition(x_state_flat) = begin
-    x_state = reshape(x_state_flat, horizon, 64)
+    x_state = reshape(x_state_flat, 64, horizon)'
     dt = 0.1 
     idx = 1
     if horizon != 1
@@ -179,7 +182,7 @@ end
 
 State_Transition_Scalar(x_state_flat) = begin
     D = zeros(4*horizon,1)
-    x_state = reshape(x_state_flat, horizon, 64)
+    x_state = reshape(x_state_flat, 64, horizon)'
     dt = 0.1 
     idx = 1
     if horizon != 1
@@ -208,10 +211,10 @@ end
 x_1_state = vcat([x_state[i, vcat(1:6, 9:32)]' for i in 1:size(x_state, 1)]...)
 x_2_state = vcat([x_state[i, vcat(1:4, 7:8, 33:56)]' for i in 1:size(x_state, 1)]...)
 
-x1state_y = [x_1_state...]
-x2state_y = [x_2_state...]
+x1state_y = [x_1_state'...]
+x2state_y = [x_2_state'...]
 
-y = [x...]
+y = [x'...]
 
 x1 = [y[1:6]; y[9:32]]
 x2 = [y[1:4]; y[7:8]; y[33:56]]
@@ -267,10 +270,11 @@ total_grad_1 = (ref_grad_1 + input_grad_1 + poly_1_grad_1_23 + poly_1_grad_1_24 
                  poly_2_grad_1_23 + poly_2_grad_1_24 + poly_2_grad_1_14 + poly_3_grad_1_23 + 
                  poly_3_grad_1_24 + poly_3_grad_1_14 + poly_4_grad_1_23 + poly_4_grad_1_24 + poly_4_grad_1_14)
 
+
 total_grad_2 = (ref_grad_2 + input_grad_2 + poly_1_grad_2_23 + poly_1_grad_2_24 + poly_1_grad_2_14 + 
                 poly_2_grad_2_23 + poly_2_grad_2_24 + poly_2_grad_2_14 + poly_3_grad_2_23 + poly_3_grad_2_24 + 
                 poly_3_grad_2_14 + poly_4_grad_2_23 + poly_4_grad_2_24 + poly_4_grad_2_14)
-
+            
 
 
 total_hess_1 = Symbolics.jacobian(total_grad_1, x, simplify=true)
@@ -282,7 +286,7 @@ function get_H(x_traj)
     H_list1 = []
     H_list2 = []
     H1 = H2 = []
-    x_flat = [x_traj...]
+    x_flat = [x_traj'...]
     x_state_vals = Dict(x_state[i] => x_flat[i] for i in 1:64*horizon)
     S1 = substitute.(state_transition_1_hess, (x_state_vals,))
     S2 = substitute.(state_transition_2_hess, (x_state_vals,))
@@ -298,22 +302,29 @@ function get_H(x_traj)
             push!(H_list2, H2)
         end
     end
-    if horizon == 1
-        H_diag1 = H1 + Symbolics.value.(S1)
-        H_diag2 = H2 + Symbolics.value.(S2)
-    else
-        H_diag1 = BlockDiagonal([H_list1...]) + Symbolics.value.(S1)
-        H_diag2 = BlockDiagonal([H_list2...]) + Symbolics.value.(S2)
-    end
+    H_a = []
+    for i in 1:horizon
+        start_idx = 30*(i-1) + 1
+        end_idx = 30*i
 
-    H = vcat(H_diag1, H_diag2, Symbolics.value.(ST_wo_mu))
-    return convert(Matrix{Float64}, H)
+        start_idx_2 = 64*(i-1) + 1
+        end_idx_2 = 64*i
+
+        start_idx_3 = 4*(i-1) + 1
+        end_idx__3 = 4*i
+        push!(H_a, vcat(H_list1[i] + Symbolics.value.(S1[start_idx:end_idx, start_idx_2:end_idx_2]), 
+                        H_list2[i] + Symbolics.value.(S2[start_idx:end_idx, start_idx_2:end_idx_2]), 
+                        Symbolics.value.(ST_wo_mu[start_idx_3:end_idx__3, start_idx_2:end_idx_2])))
+    end
+    H_a = BlockDiagonal([H_a...])
+
+    return convert(Matrix{Float64}, H_a)
 end
 
 function get_G(x_traj)
     G_list1 = []
     G_list2 = []
-    x_flat = [x_traj...]
+    x_flat = [x_traj'...]
     x_state_vals = Dict(x_state[i] => x_flat[i] for i in 1:64*horizon)
     S1 = substitute.(state_transition_1, (x_state_vals,))
     S2 = substitute.(state_transition_2, (x_state_vals,))
@@ -328,18 +339,25 @@ function get_G(x_traj)
         push!(G_list2, G2)
 
     end
-    G1 = vcat(G_list1...)
-    G2 = vcat(G_list2...)
-    G = vcat(G1 + Symbolics.value.(S1), G2 + Symbolics.value.(S2), Symbolics.value.(ST_wo_mu))
-    return G
-
+    G1 = vcat(G_list1...) + Symbolics.value.(S1)
+    G2 = vcat(G_list2...) + Symbolics.value.(S2)
+    G = []
+    for i in 1:30:length(G1)
+        start_index = i
+        end_index = min(i + 29, length(G1))
+        slice_G1 = G1[start_index:end_index]
+        slice_G2 = G2[start_index:end_index]
+        st_index = 4 * div(i - 1, 30) + 1
+        slice_ST_wo_mu = ST_wo_mu[st_index:st_index+3]
+        push!(G, vcat(slice_G1, slice_G2, slice_ST_wo_mu))
+    end
+    return vcat(G...)
 end
-
 
 function inner_loop(x_init)
     x_traj = x_init
     x_prev = x_init
-    for i = 1:2000
+    for i = 1:100
         println("Iteration: ", i)
         H_a = get_H(x_traj)
         G_a = get_G(x_traj)
@@ -348,17 +366,18 @@ function inner_loop(x_init)
     
         Hinv = pinv(QR.R) * QR.Q'
         
-        Δtraj = - pinv(H_a)* G_a
+        Δtraj = - Hinv * G_a
 
         x_prev = x_traj
-        x_traj_flat = [x_traj...]
+        x_traj_flat = [x_traj'...]
+
         α = line_search(x_traj_flat, G_a, Δtraj)
 
         print("α: ", α)
 
         x_traj_flat += α * Δtraj
 
-        x_traj = reshape(x_traj_flat, horizon, 64)
+        x_traj = reshape(x_traj_flat, 64, horizon)'
 
         println("norm of x_prev - x_traj: ", norm(x_prev - x_traj))
 
@@ -370,7 +389,7 @@ function inner_loop(x_init)
 end
 
 
-function line_search(y, G, δy, β=0.4, τ=0.5)
+function line_search(y, G, δy, β=0.45, τ=0.5)
     α = 1.0
     while norm(G'*(y + α*δy), 1) <= (1 - α*β)*norm(G'*y, 1)
         α *= τ
@@ -378,7 +397,9 @@ function line_search(y, G, δy, β=0.4, τ=0.5)
     return α
 end
 
-
 x_converged = inner_loop(x_init)
+
+get_G(x_converged)
+
 
 
