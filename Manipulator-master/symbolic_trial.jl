@@ -1,10 +1,10 @@
-
 using ForwardDiff
 using LinearAlgebra
 using FiniteDiff
 using Symbolics
 using StaticArrays
 using BlockDiagonals
+using LinearSolve
 
 const R = [4.0 0.0; 0.0 4.0]
 const Q = I(4)
@@ -73,21 +73,21 @@ Polyhedral_1(x, lambda, idx1, idx2) = begin
     R2 = R_2(x[idx2])
 
     if idx1 == 2 && idx2 == 3 
-        return lambda[1]*((-H*R1*t1 - h)'* x[9:12] + (-F*R2*t2 - g)'*x[21:24] + (-H*R1*t1 - h)'* x[33:36] + (-F*R2*t2 - g)'*x[45:48])
+        return -lambda[1]*((H*R1*t1 - h)'* x[9:12] + (F*R2*t2 - g)'*x[21:24] + (H*R1*t1 - h)'* x[33:36] + (F*R2*t2 - g)'*x[45:48])
     elseif idx1 == 2 && idx2 == 4
-        return lambda[13]*((-H*R1*t1 - h)'* x[13:16] + (-F*R2*t2 - g)'*x[25:28] + (-H*R1*t1 - h)'* x[37:40] + (-F*R2*t2 - g)'*x[49:52])
+        return -lambda[13]*((H*R1*t1 - h)'* x[13:16] + (F*R2*t2 - g)'*x[25:28] + (H*R1*t1 - h)'* x[37:40] + (F*R2*t2 - g)'*x[49:52])
     elseif idx1 == 1 && idx2 == 4 
-        return lambda[25]*((-H*R1*t1 - h)'* x[17:20] + (-F*R2*t2 - g)'*x[29:32] + (-H*R1*t1 - h)'* x[41:44] + (-F*R2*t2 - g)'*x[53:56])
+        return -lambda[25]*((H*R1*t1 - h)'* x[17:20] + (F*R2*t2 - g)'*x[29:32] + (H*R1*t1 - h)'* x[41:44] + (F*R2*t2 - g)'*x[53:56])
     end 
 end
 
 Polyhedral_2(x, lambda ,idx1 = 2, idx2 = 1) =  begin
     if idx1 == 2 && idx2 == 3 
-        return dot(lambda[2:5], x[9:12]) + dot(lambda[6:9],x[21:24]) + dot(lambda[2:5], x[33:36]) + dot(lambda[6:9],x[45:48])
+        return -(dot(lambda[2:5], x[9:12]) + dot(lambda[6:9],x[21:24]) + dot(lambda[2:5], x[33:36]) + dot(lambda[6:9],x[45:48]))
     elseif idx1 == 2 && idx2 == 4
-        return dot(lambda[14:17], x[13:16]) + dot(lambda[18:21],x[21:24]) + dot(lambda[14:17], x[37:40]) + dot(lambda[18:21],x[49:52])
+        return -(dot(lambda[14:17], x[13:16]) + dot(lambda[18:21],x[21:24]) + dot(lambda[14:17], x[37:40]) + dot(lambda[18:21],x[49:52]))
     elseif idx1 == 1 && idx2 == 4
-        return dot(lambda[26:29],x[17:20]) + dot(lambda[30:33],x[29:32]) + dot(lambda[26:29], x[41:44]) + dot(lambda[30:33],x[53:56])
+        return -(dot(lambda[26:29],x[17:20]) + dot(lambda[30:33],x[29:32]) + dot(lambda[26:29], x[41:44]) + dot(lambda[30:33],x[53:56]))
     end 
 end
 
@@ -96,11 +96,11 @@ Polyhedral_3(x, lambda, idx1 = 2, idx2 = 1) = begin
     R2T = [cos(x[idx2]) -sin(x[idx2]); sin(x[idx2]) cos(x[idx2])]
 
     if idx1 == 2 && idx2 == 3 
-        return lambda[10]*(symbolic_norm(R2T* F'*x[21:24]) + symbolic_norm(R2T* F'*x[45:48]))
+        return lambda[10]*(symbolic_norm(R2T* F'*x[21:24]) - 1 + symbolic_norm(R2T* F'*x[45:48]) - 1)
     elseif idx1 == 2 && idx2 == 4
-         return lambda[22]*(symbolic_norm(R2T* F'*x[25:28]) + symbolic_norm(R2T* F'*x[49:52]))
+         return lambda[22]*(symbolic_norm(R2T* F'*x[25:28])  - 1 + symbolic_norm(R2T* F'*x[49:52]) - 1)
     elseif idx1 == 1 && idx2 == 4
-        return lambda[34]*(symbolic_norm(R2T* F'*x[29:32]) + symbolic_norm(R2T* F'*x[53:56]))
+        return lambda[34]*(symbolic_norm(R2T* F'*x[29:32]) - 1 + symbolic_norm(R2T* F'*x[53:56]) - 1)
     end
 end
 
@@ -278,10 +278,10 @@ function get_H(x_traj)
         push!(H_list1, H1)
         push!(H_list2, H2)
     end
-    H_diag1 = BlockDiagonal([H_list1...]) + S1
-    H_diag2 = BlockDiagonal([H_list2...]) + S2
-    H = vcat(H_diag1, H_diag2, ST_wo_mu)
-    return H
+    H_diag1 = BlockDiagonal([H_list1...]) + Symbolics.value.(S1)
+    H_diag2 = BlockDiagonal([H_list2...]) + Symbolics.value.(S2)
+    H = vcat(H_diag1, H_diag2, Symbolics.value.(ST_wo_mu))
+    return convert(Matrix{Float64}, H)
 end
 
 function get_G(x_traj)
@@ -304,15 +304,51 @@ function get_G(x_traj)
     end
     G1 = vcat(G_list1...)
     G2 = vcat(G_list2...)
-    G = vcat(G1 + S1, G2 + S2, ST_wo_mu)
+    G = vcat(G1 + Symbolics.value.(S1), G2 + Symbolics.value.(S2), Symbolics.value.(ST_wo_mu))
     return G
 
 end
 
-H_a = get_H(x_traj)
-G_a = get_G(x_traj)
+
+function inner_loop(x_init)
+    x_traj = x_init
+    x_prev = x_init
+    for i = 1:20
+        println("Iteration: ", i)
+        H_a = get_H(x_traj)
+        G_a = get_G(x_traj)
+    
+        QR = qr(H_a)
+    
+        Hinv = pinv(QR.R) * QR.Q'
+        
+        Δtraj = - Hinv * G_a
+
+        x_prev = x_traj
+        x_traj_flat = [x_traj...]
+        α = line_search(x_traj_flat, G_a, Δtraj)
+
+        x_traj_flat += α * Δtraj
+
+        x_traj = reshape(x_traj_flat, 20, 64)
+        println("norm of x_prev - x_traj: ", norm(x_prev - x_traj))
+        if norm(x_prev - x_traj) < 1e-6
+            break
+        end
+    end
+    return x_traj
+end
 
 
+function line_search(y, G, δy, β=0.4, τ=0.5)
+    α = 1.0
+    while norm(G'*(y + α*δy), 1) <= (1 - α*β)*norm(G'*y, 1)
+        α *= τ
+    end
+    return α
+end
 
+
+x_converged = inner_loop(x_traj)
 
 
