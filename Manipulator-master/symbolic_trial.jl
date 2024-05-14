@@ -6,8 +6,8 @@ using StaticArrays
 using BlockDiagonals
 using LinearSolve
 
-R = 10*[1.0 0.0; 0.0 1.0]
-Q = 10*I(4)
+R = 0.1*[1.0 0.0; 0.0 1.0]
+Q = 100*I(4)
 x_ref = [pi*2/3,pi*2/3, pi/6, pi/6]
 
 const l1 = 6.0
@@ -18,7 +18,7 @@ const l = 6.0
 const w = 3
 
 const d = 100.0
-horizon = 2
+horizon = 10
 
 const H = [1 0; -1 0; 0 1; 0 -1]
 const h = [l/2; l/2; w/2; w/2]
@@ -26,19 +26,16 @@ const h = [l/2; l/2; w/2; w/2]
 const F = [1 0; -1 0; 0 1; 0 -1]
 const g = [l/2; l/2; w/2; w/2]
 
-const lambda = rand(1,36) * 1e-8
+const lambda = rand(1,36)*0.0001
 const dt = 0.25
 
 
 const θ_init = [3*pi/4, 3*pi/4, pi/4, pi/4]
 
-x_init = reshape(vcat(θ_init, rand(60)), 1, 64)
-x_init = repeat(x_init, horizon, 1)
-
-
+random_init = rand(60)
+x_init = reshape(vcat(θ_init, random_init), 1, 64)
+x_init = repeat(x_init, horizon,1)
 const x0 = reshape(vcat(θ_init, rand(60)), 1, 64)
-
-
 
 t_1(x) = [l1 * cos(x[1]); l1 * sin(x[1])]
 
@@ -272,7 +269,7 @@ total_grad_1 = (ref_grad_1 + input_grad_1 + poly_1_grad_1_23 + poly_1_grad_1_24 
 total_grad_2 = (ref_grad_2 + input_grad_2 + poly_1_grad_2_23 + poly_1_grad_2_24 + poly_1_grad_2_14 + 
                 poly_2_grad_2_23 + poly_2_grad_2_24 + poly_2_grad_2_14 + poly_3_grad_2_23 + poly_3_grad_2_24 + 
                 poly_3_grad_2_14 + poly_4_grad_2_23 + poly_4_grad_2_24 + poly_4_grad_2_14)
-            
+          
 
 
 total_hess_1 = Symbolics.jacobian(total_grad_1, x, simplify=true)
@@ -313,7 +310,22 @@ function get_H(x_traj)
                         H_list2[i] + Symbolics.value.(S2[start_idx:end_idx, start_idx_2:end_idx_2]), 
                         Symbolics.value.(ST_wo_mu[start_idx_3:end_idx__3, start_idx_2:end_idx_2])))
     end
+
     H_a = BlockDiagonal([H_a...])
+    H_a = convert(Matrix{Float64}, H_a)
+
+    for i in 1:horizon
+        for j in 1:horizon
+            if i != j
+                new_entry = vcat(Symbolics.value.(S1[30*(i-1)+1:30*i, 64*(j-1)+1:64*j]),
+                Symbolics.value.(S2[30*(i-1)+1:30*i, 64*(j-1)+1:64*j]),
+                Symbolics.value.(ST_wo_mu[4*(i-1)+1:4*i, 64*(j-1)+1:64*j]))
+
+                new_entry = convert(Matrix{Float64}, new_entry)
+                H_a[64*(i-1)+1:64*i, 64*(j-1)+1:64*j] .= new_entry
+            end 
+        end 
+    end
 
     return convert(Matrix{Float64}, H_a)
 end
@@ -355,8 +367,10 @@ end
 function inner_loop(x_init)
     x_traj = x_init
     x_prev = x_init
-    for i = 1:100
+    i = 1
+    while true | i < 500
         println("Iteration: ", i)
+        i += 1
         H_a = get_H(x_traj)
         G_a = get_G(x_traj)
     
@@ -369,33 +383,39 @@ function inner_loop(x_init)
         x_prev = x_traj
         x_traj_flat = [x_traj'...]
 
-        α = line_search(x_traj_flat, G_a, Δtraj)
+        # α = line_search(x_traj_flat, G_a, Δtraj)
 
+        α = 1.0
         print("α: ", α)
-
+        println("norm of delta: ", norm(Δtraj))   
         x_traj_flat += α * Δtraj
 
         x_traj = reshape(x_traj_flat, 64, horizon)'
+        G_new = get_G(x_traj)
+        println("G_new", norm(G_new))
 
-        println("norm of x_prev - x_traj: ", norm(x_prev - x_traj))
-
-        if norm(x_prev - x_traj) < 0.01
-            break
+        if norm(G_new) < 0.01
+          break
         end
     end
     return x_traj
 end
 
 
-function line_search(y, G, δy, β=0.45, τ=0.5)
-    α = 1.0
-    y_new = y + α*δy
-    y_new = reshape(y_new, 64, horizon)'
-    G_alpha = get_G(y_new)
-    while norm(G_alpha,2) <= (1 - α*β)*norm(G, 2)
+function line_search(y, G, δy, β=0.01, τ=0.5)
+    α = 1
+    while α > 1e-4  
+        y_new = y + α * δy
+        y_new = reshape(y_new, 64, horizon)'
+        G_alpha = get_G(y_new)
+
+        if norm(G_alpha, 1) <= (1 - α * β) * norm(G, 1)
+            return α
+        end
+        
         α *= τ
     end
-    return α
+    return α  
 end
 
 x_converged = inner_loop(x_init)
