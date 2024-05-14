@@ -82,6 +82,7 @@ L = J + D_mu
 G = [] 
 
 for i in 1:N
+    global G
     ∇L1_i = ∇L1[(i-1)*(states_n + 2) + 1:(i-1)*(states_n + 2) + 6]
     ∇L2_i = ∇L2[(i-1)*(states_n + 2) + 1:(i-1)*(states_n + 2) + 6]
     D_i = D[4*(i-1)+1:4*i]
@@ -108,8 +109,8 @@ function inner_loop(x_init, G, H, N, x_flat, max_iter)
         δy = - pinv(H_val) * G_val
 
         x_prev = x_traj        
-        # α = line_search(x_flat_val, G_val,  δy)
-        α = 0.9
+        α = line_search(x_flat_val, G_val,  δy)
+        # α = 0.9
         print("α: ", α)
         
         println("norm of delta: ", norm(δy))   
