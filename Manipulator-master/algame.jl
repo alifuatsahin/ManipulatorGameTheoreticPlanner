@@ -105,13 +105,12 @@ function inner_loop(x_init, G, H, N, x_flat, max_iter)
         
         G_val = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (x_state_vals,))))
         H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (x_state_vals,))))
-
+        println("G_val: ", norm(G_val,1))
         δy = - pinv(H_val) * G_val
 
         x_prev = x_traj        
         α = line_search(x_flat_val, G_val,  δy)
-        # α = 0.9
-        print("α: ", α)
+        println("α: ", α)
         
         println("norm of delta: ", norm(δy))   
         x_flat_val += α * δy
@@ -128,7 +127,7 @@ function inner_loop(x_init, G, H, N, x_flat, max_iter)
     return x_traj
 end
 
-function line_search(y, G, δy, β=0.1, τ=0.9)
+function line_search(y, G_val, δy, β=0.1, τ=0.9)
     α = 1
     while α > 1e-4  
 
@@ -136,10 +135,11 @@ function line_search(y, G, δy, β=0.1, τ=0.9)
         y_state_vals = Dict(x_flat[i] => y_new[i] for i in 1:16*N)
 
         G_alpha = convert(Vector{Float64},Symbolics.value.(substitute.(G, (y_state_vals,))))
-        print("norm of G_alpha: ", norm(G_alpha))
-        print("norm of G: ", norm(G))
 
-        if norm(G_alpha, 1) < (1 - α * β) * norm(G, 1)
+        println("norm of G_alpha: ", norm(G_alpha, 1))
+        println("norm of G: ", norm(G_val, 1))
+
+        if norm(G_alpha, 1) < (1 - α * β) * norm(G_val, 1)
             return α
         end
         
