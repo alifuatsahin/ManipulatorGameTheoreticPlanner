@@ -96,10 +96,10 @@ max_iter = 100
 function inner_loop(x_init, G, H, N, x_flat, max_iter)
     x_traj = x_init
     x_prev = x_init
+    x_flat_val = [x_init'...]
     for i in 1:max_iter
         println("Iteration: ", i)        
         
-        x_flat_val = [x_traj'...]
         x_state_vals = Dict(x_flat[i] => x_flat_val[i] for i in 1:16*N)
         
         G_val = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (x_state_vals,))))
@@ -107,22 +107,18 @@ function inner_loop(x_init, G, H, N, x_flat, max_iter)
 
         δy = - pinv(H_val) * G_val
 
-        x_prev = x_traj
-        x_flat_val = [x_traj'...]
-        
-        α = line_search(x_flat_val, G_val,  δy)
+        x_prev = x_traj        
+        # α = line_search(x_flat_val, G_val,  δy)
+        α = 0.9
         print("α: ", α)
         
         println("norm of delta: ", norm(δy))   
         x_flat_val += α * δy
 
-        x_traj = reshape(x_flat_val, 16, N)'
-
-        x_flat_val = [x_traj'...]
         x_state_vals = Dict(x_flat[i] => x_flat_val[i] for i in 1:16*N)
         G_new = convert(Vector{Float64},Symbolics.value.(substitute.(G, (x_state_vals,))))
 
-        println("G_new", norm(G_new))
+        println("G_new", norm(G_new,1))
 
         if norm(G_new) < 0.01
           break
@@ -134,15 +130,15 @@ end
 function line_search(y, G, δy, β=0.1, τ=0.9)
     α = 1
     while α > 1e-4  
-        y_new = y + α * δy
-        y_traj = reshape(y_new, 16, N)'
 
-        y_flat_val = [y_traj'...]
-        y_state_vals = Dict(x_flat[i] => y_flat_val[i] for i in 1:16*N)
+        y_new = y + α * δy
+        y_state_vals = Dict(x_flat[i] => y_new[i] for i in 1:16*N)
 
         G_alpha = convert(Vector{Float64},Symbolics.value.(substitute.(G, (y_state_vals,))))
-        
-        if norm(G_alpha, 1)/length(G_alpha) < (1 - α * β) * norm(G, 1)
+        print("norm of G_alpha: ", norm(G_alpha))
+        print("norm of G: ", norm(G))
+
+        if norm(G_alpha, 1) < (1 - α * β) * norm(G, 1)
             return α
         end
         
