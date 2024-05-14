@@ -18,7 +18,7 @@ const l = 6.0
 const w = 3
 
 const d = 100.0
-horizon = 1
+horizon = 2
 
 const H = [1 0; -1 0; 0 1; 0 -1]
 const h = [l/2; l/2; w/2; w/2]
@@ -136,7 +136,7 @@ State_Transition_Mu(x_state_flat) = begin
     if horizon != 1
         for i in 1:horizon
             if i == 1
-                D += dot(x_state[i, 57:60],(x_state[i, 1:4] - x0[1, 1:4])) + dot(x_state[i, 61:64],(x_state[i, 1:4] - x0[1, 1:4]))
+                D += dot(x_state[i, 57:60],(x_state[i, 1:4] - x0[1, 1:4] - dt * x_state[1, 1:4])) + dot(x_state[i, 61:64],(x_state[i, 1:4] - x0[1, 1:4]- dt * x_state[1, 1:4]))
             else
                 D += dot(x_state[i, 57:60],(x_state[i, 1:4] - x_state[i-1, 1:4] - dt * x_state[i, 5:8])) + dot(x_state[i, 61:64],(x_state[i, 1:4] - x_state[i-1, 1:4] - dt * x_state[i, 5:8]))
             end
