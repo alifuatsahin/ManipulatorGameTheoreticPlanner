@@ -7,7 +7,7 @@ using BlockDiagonals
 using LinearSolve
 
 R = 0.1*[1.0 0.0; 0.0 1.0]
-Q = 100*I(4)
+Q = 10000*I(4)
 x_ref = [pi*2/3,pi*2/3, pi/6, pi/6]
 
 const l1 = 6.0
@@ -18,7 +18,7 @@ const l = 6.0
 const w = 3
 
 const d = 100.0
-horizon = 10
+horizon = 2
 
 const H = [1 0; -1 0; 0 1; 0 -1]
 const h = [l/2; l/2; w/2; w/2]
@@ -26,13 +26,13 @@ const h = [l/2; l/2; w/2; w/2]
 const F = [1 0; -1 0; 0 1; 0 -1]
 const g = [l/2; l/2; w/2; w/2]
 
-const lambda = rand(1,36)*0.0001
-const dt = 0.25
+lambda = rand(1,36)*0
+dt = 5
 
 
 const θ_init = [3*pi/4, 3*pi/4, pi/4, pi/4]
 
-random_init = rand(60)
+random_init = rand(60)*20
 x_init = reshape(vcat(θ_init, random_init), 1, 64)
 x_init = repeat(x_init, horizon,1)
 const x0 = reshape(vcat(θ_init, rand(60)), 1, 64)
@@ -136,7 +136,7 @@ State_Transition_Mu(x_state_flat) = begin
     if horizon != 1
         for i in 1:horizon
             if i == 1
-                D += dot(x_state[i, 57:60],(x_state[i, 1:4] - x0[1, 1:4])) + dot(x_state[i, 61:64],(x_state[i, 1:4] - x0[1, 1:4]))
+                D += dot(x_state[i, 57:60],(x_state[i, 1:4] - x0[1, 1:4]) - dt * x_state[i, 5:8]) + dot(x_state[i, 61:64],(x_state[i, 1:4] - x0[1, 1:4] - dt * x_state[i, 5:8]))
             else
                 D += dot(x_state[i, 57:60],(x_state[i, 1:4] - x_state[i-1, 1:4] - dt * x_state[i, 5:8])) + dot(x_state[i, 61:64],(x_state[i, 1:4] - x_state[i-1, 1:4] - dt * x_state[i, 5:8]))
             end
@@ -261,12 +261,12 @@ state_transition_1_hess = Symbolics.jacobian(state_transition_1, x_state_y, simp
 state_transition_2_hess = Symbolics.jacobian(state_transition_2, x_state_y, simplify=true)
 
 
-total_grad_1 = (ref_grad_1 + input_grad_1 + poly_1_grad_1_23 + poly_1_grad_1_24 + poly_1_grad_1_14 +
+total_grad_1 = (ref_grad_1 + poly_1_grad_1_23 + poly_1_grad_1_24 + poly_1_grad_1_14 +
                  poly_2_grad_1_23 + poly_2_grad_1_24 + poly_2_grad_1_14 + poly_3_grad_1_23 + 
                  poly_3_grad_1_24 + poly_3_grad_1_14 + poly_4_grad_1_23 + poly_4_grad_1_24 + poly_4_grad_1_14)
 
 
-total_grad_2 = (ref_grad_2 + input_grad_2 + poly_1_grad_2_23 + poly_1_grad_2_24 + poly_1_grad_2_14 + 
+total_grad_2 = (ref_grad_2  + poly_1_grad_2_23 + poly_1_grad_2_24 + poly_1_grad_2_14 + 
                 poly_2_grad_2_23 + poly_2_grad_2_24 + poly_2_grad_2_14 + poly_3_grad_2_23 + poly_3_grad_2_24 + 
                 poly_3_grad_2_14 + poly_4_grad_2_23 + poly_4_grad_2_24 + poly_4_grad_2_14)
           
@@ -347,7 +347,6 @@ function get_G(x_traj)
         G2 = Symbolics.value.(V2)
         push!(G_list1, G1)
         push!(G_list2, G2)
-
     end
     G1 = vcat(G_list1...) + Symbolics.value.(S1)
     G2 = vcat(G_list2...) + Symbolics.value.(S2)
