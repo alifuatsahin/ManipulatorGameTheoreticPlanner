@@ -104,7 +104,7 @@ function alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, N)
     while !done
         y = newton_method(y, lambda, rho_s, G, H, N, x_flat, λ, ρ, max_iter)
         lambda = dual_ascent(y, x_flat, lambda, rho, C, 4*N, 0)
-        rho, rho_s = increasing_schedule(rho, rho_s, lambda, C, y, x_flat)
+        rho, rho_s, done = increasing_schedule(rho, rho_s, lambda, C, y, x_flat)
     end
     return y
 end
