@@ -103,3 +103,4 @@ H = Symbolics.jacobian(G, x_flat)
 
 max_iter = 100
 
+y = alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, N)

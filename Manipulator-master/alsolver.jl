@@ -13,7 +13,6 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter)
         δy = - pinv(H_val) * G_val
     
         α = line_search(x_flat_val, lambda, rho, flat, G_val,  δy)
-        println("α: ", α)
         
         # println("norm of delta: ", norm(δy))   
         x_flat_val += α * δy
@@ -40,9 +39,6 @@ function line_search(y, lambda, rho, flat, G_val, δy, β=0.1, τ=0.9)
         vals = Dict(flat[i] => flat_val[i] for i in 1:24*N)
 
         G_alpha = convert(Vector{Float64},Symbolics.value.(substitute.(G, (vals,))))
-
-        # println("norm of G_alpha: ", norm(G_alpha, 1))
-        # println("norm of G: ", norm(G_val, 1))
 
         if norm(G_alpha, 1) < (1 - α * β) * norm(G_val, 1)
             return α
@@ -85,8 +81,6 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=3)
         end
     end
 
-    println("C_val: ", C_val)
-
     for i in 1:length(C)
         if C_val[i] >= EPS
             done = false
@@ -108,3 +102,4 @@ function alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, N)
     end
     return y
 end
+
