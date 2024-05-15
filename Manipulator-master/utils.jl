@@ -24,7 +24,7 @@ end
 function constraints(x, N)
     @variables C[1:4*N]
     for i in 1:N
-        C[4*(i-1)+1:4*i] = x[i, 5:8] - ones(4)*1.5
+        C[4*(i-1)+1:4*i] = x[i, 5:8] .^2 - ones(4)*1.5^2
     end
     return C
 end
