@@ -32,7 +32,7 @@ const F2 = [1 0; -1 0; 0 1; 0 -1]
 const f2 = [l4/2; l4/2; w/2; w/2]
 
 # Number of constraints
-n = 8
+n = 4
 
 # Cost Matrices
 R = 0.1*I(4)
@@ -42,7 +42,7 @@ Q = 10000*I(4)
 θ_ref = [pi*2/3, pi*2/3, pi/6, pi/6]
 
 # Lagrangian Multipliers
-lambda = ones(n)
+lambda = ones(n*N)
 
 # Discretization
 dt = 0.1 # seconds [s]
@@ -72,9 +72,12 @@ mu_2 = [x[:, 3*states_n+1:3*states_n+4]'...]
 D = state_transition(x, dt, N, θ_init)
 D_mu = dot(mu_1,D) + dot(mu_2,D)
 
+C = constraints(x, N)
+C_lambda(λ) = dot(λ, C)
+
 J = player_cost(x, θ_ref, R, Q, N)
 
-L = J + D_mu
+L = J + D_mu + C_lambda(λ)
 
 ∇L1 = Symbolics.gradient(L, x1_flat)
 ∇L2 = Symbolics.gradient(L, x2_flat)

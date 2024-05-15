@@ -21,6 +21,14 @@ function state_transition(x, dt, N, θ_init)
     return D
 end
 
+function constraints(x, N)
+    @variables C[1:4*N]
+    for i in 1:N
+        C[4*(i-1)+1:4*i] = x[i, 5:8] - 1.5
+    end
+    return C
+end
+
 function generate_trajectory(θ_init, θ_ref, N, dt)
     x_diff = θ_ref*2 - θ_init
     x = zeros(N, 4*length(θ_init))
@@ -37,5 +45,4 @@ function generate_trajectory(θ_init, θ_ref, N, dt)
     end
     return x
 end
-
 
