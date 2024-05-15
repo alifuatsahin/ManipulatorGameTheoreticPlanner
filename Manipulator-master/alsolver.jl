@@ -9,19 +9,16 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter)
         
         G_val = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (vals,))))
         H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (vals,))))
-        # println("G_val: ", norm(G_val,1))
+        
         δy = - pinv(H_val) * G_val
     
         α = line_search(x_flat_val, lambda, rho, flat, G_val,  δy)
         
-        # println("norm of delta: ", norm(δy))   
         x_flat_val += α * δy
 
         flat_val = vcat(x_flat_val, lambda, rho)
         vals = Dict(flat[i] => flat_val[i] for i in 1:24*N)
         G_new = convert(Vector{Float64},Symbolics.value.(substitute.(G, (vals,))))
-
-        # println("G_new", norm(G_new,1))
 
         if norm(G_new) < 0.01
           return reshape(x_flat_val, 16, N)'
