@@ -47,7 +47,7 @@ horizon = 5 # seconds [s]
 N = convert(Int64, horizon/dt) # number of time steps
 
 # Lagrangian Multipliers
-λ = @variables λ[1:n*N]
+@variables λ[1:n*N]
 lambda = ones(n*N)
 
 # Initial Guess
@@ -98,27 +98,29 @@ H = Symbolics.jacobian(G, x_flat)
 
 max_iter = 100
 
-function inner_loop(x_init, G, H, N, x_flat, max_iter)
+function inner_loop(x_init, lambda, G, H, N, x_flat, λ, max_iter)
     x_flat_val = [x_init'...]
+    flat = vcat(x_flat, λ)
     for i in 1:max_iter
         println("Iteration: ", i)        
         
-        x_state_vals = Dict(x_flat[i] => x_flat_val[i] for i in 1:16*N)
-        lambda_vals = Dict(λ[i] => lambda[i] for i in 1:4*N)
+        flat_val = vcat(x_flat_val, lambda)
+        vals = Dict(flat[i] => flat_val[i] for i in 1:20*N)
         
-        G_val = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (x_state_vals,lambda_vals,))))
-        H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (x_state_vals,lambda_vals,))))
+        G_val = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (vals,))))
+        H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (vals,))))
         println("G_val: ", norm(G_val,1))
         δy = - pinv(H_val) * G_val
     
-        α = line_search(x_flat_val, G_val,  δy)
+        α = line_search(x_flat_val, flat, G_val,  δy)
         println("α: ", α)
         
         println("norm of delta: ", norm(δy))   
         x_flat_val += α * δy
 
-        x_state_vals = Dict(x_flat[i] => x_flat_val[i] for i in 1:16*N)
-        G_new = convert(Vector{Float64},Symbolics.value.(substitute.(G, (x_state_vals,lambda_vals,))))
+        flat_val = vcat(x_flat_val, lambda)
+        vals = Dict(flat[i] => flat_val[i] for i in 1:20*N)
+        G_new = convert(Vector{Float64},Symbolics.value.(substitute.(G, (vals,))))
 
         println("G_new", norm(G_new,1))
 
@@ -129,14 +131,15 @@ function inner_loop(x_init, G, H, N, x_flat, max_iter)
     return reshape(x_flat_val, 16, N)'
 end
 
-function line_search(y, G_val, δy, β=0.1, τ=0.9)
+function line_search(y, flat, G_val, δy, β=0.1, τ=0.9)
     α = 1
     while α > 1e-4  
 
         y_new = y + α * δy
-        y_state_vals = Dict(x_flat[i] => y_new[i] for i in 1:16*N)
+        flat_val = vcat(y_new, lambda)
+        vals = Dict(flat[i] => flat_val[i] for i in 1:20*N)
 
-        G_alpha = convert(Vector{Float64},Symbolics.value.(substitute.(G, (y_state_vals,lambda_vals,))))
+        G_alpha = convert(Vector{Float64},Symbolics.value.(substitute.(G, (vals,))))
 
         println("norm of G_alpha: ", norm(G_alpha, 1))
         println("norm of G: ", norm(G_val, 1))
@@ -150,5 +153,5 @@ function line_search(y, G_val, δy, β=0.1, τ=0.9)
     return α  
 end
 
-x_converged = inner_loop(x_init, G, H, N, x_flat, max_iter)
+x_converged = inner_loop(x_init, lambda, G, H, N, x_flat, λ, max_iter)
 
