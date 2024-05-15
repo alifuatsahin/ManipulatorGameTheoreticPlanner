@@ -41,13 +41,14 @@ Q = 10000*I(4)
 # Reference
 θ_ref = [pi*2/3, pi*2/3, pi/6, pi/6]
 
-# Lagrangian Multipliers
-lambda = ones(n*N)
-
 # Discretization
 dt = 0.1 # seconds [s]
 horizon = 5 # seconds [s]
 N = convert(Int64, horizon/dt) # number of time steps
+
+# Lagrangian Multipliers
+λ = @variables λ[1:n*N]
+lambda = ones(n*N)
 
 # Initial Guess
 θ_init = [3*pi/4, 3*pi/4, pi/4, pi/4]
@@ -73,16 +74,16 @@ D = state_transition(x, dt, N, θ_init)
 D_mu = dot(mu_1,D) + dot(mu_2,D)
 
 C = constraints(x, N)
-C_lambda(λ) = dot(λ, C)
+C_lambda = dot(λ, C)
 
 J = player_cost(x, θ_ref, R, Q, N)
 
-L = J + D_mu + C_lambda(λ)
+L = J + D_mu + C_lambda
 
 ∇L1 = Symbolics.gradient(L, x1_flat)
 ∇L2 = Symbolics.gradient(L, x2_flat)
 
-G = [] 
+G = []
 
 for i in 1:N
     global G
@@ -103,9 +104,10 @@ function inner_loop(x_init, G, H, N, x_flat, max_iter)
         println("Iteration: ", i)        
         
         x_state_vals = Dict(x_flat[i] => x_flat_val[i] for i in 1:16*N)
+        lambda_vals = Dict(λ[i] => lambda[i] for i in 1:4*N)
         
-        G_val = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (x_state_vals,))))
-        H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (x_state_vals,))))
+        G_val = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (x_state_vals,lambda_vals,))))
+        H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (x_state_vals,lambda_vals,))))
         println("G_val: ", norm(G_val,1))
         δy = - pinv(H_val) * G_val
     
@@ -116,7 +118,7 @@ function inner_loop(x_init, G, H, N, x_flat, max_iter)
         x_flat_val += α * δy
 
         x_state_vals = Dict(x_flat[i] => x_flat_val[i] for i in 1:16*N)
-        G_new = convert(Vector{Float64},Symbolics.value.(substitute.(G, (x_state_vals,))))
+        G_new = convert(Vector{Float64},Symbolics.value.(substitute.(G, (x_state_vals,lambda_vals,))))
 
         println("G_new", norm(G_new,1))
 
@@ -134,7 +136,7 @@ function line_search(y, G_val, δy, β=0.1, τ=0.9)
         y_new = y + α * δy
         y_state_vals = Dict(x_flat[i] => y_new[i] for i in 1:16*N)
 
-        G_alpha = convert(Vector{Float64},Symbolics.value.(substitute.(G, (y_state_vals,))))
+        G_alpha = convert(Vector{Float64},Symbolics.value.(substitute.(G, (y_state_vals,lambda_vals,))))
 
         println("norm of G_alpha: ", norm(G_alpha, 1))
         println("norm of G: ", norm(G_val, 1))
