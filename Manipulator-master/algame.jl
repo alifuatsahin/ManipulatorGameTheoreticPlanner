@@ -103,5 +103,3 @@ H = Symbolics.jacobian(G, x_flat)
 
 max_iter = 100
 
-x_converged = newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter)
-
