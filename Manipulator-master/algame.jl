@@ -39,7 +39,7 @@ R = 0.1*I(4)
 Q = 10000*I(4)
 
 # Reference
-θ_ref = [pi*2/3,pi*2/3, pi/6, pi/6]
+θ_ref = [pi*2/3, pi*2/3, pi/6, pi/6]
 
 # Lagrangian Multipliers
 lambda = ones(n)
@@ -95,8 +95,6 @@ H = Symbolics.jacobian(G, x_flat)
 max_iter = 100
 
 function inner_loop(x_init, G, H, N, x_flat, max_iter)
-    x_traj = x_init
-    x_prev = x_init
     x_flat_val = [x_init'...]
     for i in 1:max_iter
         println("Iteration: ", i)        
@@ -107,8 +105,7 @@ function inner_loop(x_init, G, H, N, x_flat, max_iter)
         H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (x_state_vals,))))
         println("G_val: ", norm(G_val,1))
         δy = - pinv(H_val) * G_val
-
-        x_prev = x_traj        
+    
         α = line_search(x_flat_val, G_val,  δy)
         println("α: ", α)
         
@@ -121,10 +118,10 @@ function inner_loop(x_init, G, H, N, x_flat, max_iter)
         println("G_new", norm(G_new,1))
 
         if norm(G_new) < 0.01
-          break
+          return reshape(x_flat_val, 16, N)'
         end
     end
-    return x_traj
+    return reshape(x_flat_val, 16, N)'
 end
 
 function line_search(y, G_val, δy, β=0.1, τ=0.9)

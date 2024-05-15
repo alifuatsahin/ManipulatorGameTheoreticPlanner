@@ -22,7 +22,7 @@ function state_transition(x, dt, N, θ_init)
 end
 
 function generate_trajectory(θ_init, θ_ref, N, dt)
-    x_diff = θ_ref - θ_init
+    x_diff = θ_ref*2 - θ_init
     x = zeros(N, 4*length(θ_init))
     x_prev = θ_init
     x[1, 1:4] = θ_init
