@@ -49,7 +49,11 @@ N = convert(Int64, horizon/dt) # number of time steps
 
 # Lagrangian Multipliers
 @variables λ[1:n*N]
+@variables ρ[1:n*N]
 lambda = ones(n*N)
+rho  = ones(n*N)
+
+I_rho = Diagonal(ρ)
 
 # Initial Guess
 θ_init = [3*pi/4, 3*pi/4, pi/4, pi/4]
@@ -79,7 +83,7 @@ C_lambda = dot(λ, C)
 
 J = player_cost(x, θ_ref, R, Q, N)
 
-L = J + D_mu + C_lambda
+L = J + D_mu + C_lambda + 1/2*C'*I_rho*C
 
 ∇L1 = Symbolics.gradient(L, x1_flat)
 ∇L2 = Symbolics.gradient(L, x2_flat)
@@ -99,5 +103,5 @@ H = Symbolics.jacobian(G, x_flat)
 
 max_iter = 100
 
-x_converged = inner_loop(x_init, lambda, G, H, N, x_flat, λ, max_iter)
+x_converged = newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter)
 
