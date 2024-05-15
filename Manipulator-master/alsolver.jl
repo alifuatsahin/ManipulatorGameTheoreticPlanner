@@ -9,20 +9,20 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter)
         
         G_val = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (vals,))))
         H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (vals,))))
-        println("G_val: ", norm(G_val,1))
+        # println("G_val: ", norm(G_val,1))
         δy = - pinv(H_val) * G_val
     
         α = line_search(x_flat_val, lambda, rho, flat, G_val,  δy)
         println("α: ", α)
         
-        println("norm of delta: ", norm(δy))   
+        # println("norm of delta: ", norm(δy))   
         x_flat_val += α * δy
 
         flat_val = vcat(x_flat_val, lambda, rho)
         vals = Dict(flat[i] => flat_val[i] for i in 1:24*N)
         G_new = convert(Vector{Float64},Symbolics.value.(substitute.(G, (vals,))))
 
-        println("G_new", norm(G_new,1))
+        # println("G_new", norm(G_new,1))
 
         if norm(G_new) < 0.01
           return reshape(x_flat_val, 16, N)'
@@ -41,8 +41,8 @@ function line_search(y, lambda, rho, flat, G_val, δy, β=0.1, τ=0.9)
 
         G_alpha = convert(Vector{Float64},Symbolics.value.(substitute.(G, (vals,))))
 
-        println("norm of G_alpha: ", norm(G_alpha, 1))
-        println("norm of G: ", norm(G_val, 1))
+        # println("norm of G_alpha: ", norm(G_alpha, 1))
+        # println("norm of G: ", norm(G_val, 1))
 
         if norm(G_alpha, 1) < (1 - α * β) * norm(G_val, 1)
             return α
@@ -72,20 +72,23 @@ end
 
 function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=3)
     rho = rho * gamma
+    EPS = 1e-6
     y_flat = [y'...]
     vals = Dict(x_flat[i] => y_flat[i] for i in 1:16*N)
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
 
     for i in 1:length(C)
-        if C_val[i] < 0 && lambda[i] == 0.0
+        if C_val[i] < EPS && lambda[i] == 0.0
             rho_s[i] = 0
         else
             rho_s[i] = rho[i]
         end
     end
 
+    println("C_val: ", C_val)
+
     for i in 1:length(C)
-        if C_val[i] >= 0
+        if C_val[i] >= EPS
             done = false
             return rho, rho_s, done
         end
