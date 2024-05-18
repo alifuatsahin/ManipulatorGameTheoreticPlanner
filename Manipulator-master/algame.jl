@@ -17,7 +17,7 @@ const l4 = 6.0
 const w = 3
 
 # Grounding distance
-const d = 100.0
+const d = 20.0
 
 # Object Matrices
 const H1 = [1 0; -1 0; 0 1; 0 -1]
@@ -45,7 +45,7 @@ R = 0.1*I(4)
 Q = 10000*I(4)
 
 # Reference
-θ_ref = [pi*2/3, pi*2/3, pi/6, pi/6]
+θ_ref = [pi/4, pi/4, 3*pi/4, 3*pi/4]
 
 # Discretization
 dt = 0.2 # seconds [s]
