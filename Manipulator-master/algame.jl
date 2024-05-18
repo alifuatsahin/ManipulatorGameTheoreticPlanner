@@ -83,7 +83,7 @@ mu_2 = [x[:, end-3:end]'...]
 D = state_transition(x, dt, N, θ_init)
 D_mu = dot(mu_1,D) + dot(mu_2,D)
 
-C = constraints(x, n, N)
+C = constraints(x, n, N, F1 ,f1, F2, f2, H1, h1, H2, h2)
 C_lambda = dot(λ, C)
 
 J = player_cost(x, θ_ref, R, Q, N)

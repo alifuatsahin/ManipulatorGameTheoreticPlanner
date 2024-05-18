@@ -1,3 +1,18 @@
+t_1(x) = [l1 * cos(x[1]); l1 * sin(x[1])]
+
+t_2(x) = [l1 * cos(x[1]) + l2 * cos(x[2]); l1 * sin(x[1]) + l2 * sin(x[2])]
+
+t_3(x) = [l3 * cos(x[3]); d - l3 * sin(x[3])]
+
+t_4(x) = [l3 * cos(x[3]) + l4 * cos(x[4]); d - l3 * sin(x[3]) - l4 * sin(x[4])]
+
+R_1(x) = [cos(x) -sin(x); sin(x) cos(x)]
+R_2(x) = [cos(x) sin(x); -sin(x) cos(x)]
+
+R_1T(x) = [cos(x) sin(x); -sin(x) cos(x)]
+R_2T(x) = [cos(x) -sin(x); sin(x) cos(x)]
+
+
 function symbolic_norm(v)
     return sqrt(sum([vi^2 for vi in v]))
 end
@@ -21,41 +36,39 @@ function state_transition(x, dt, N, θ_init)
     return D
 end
 
-function constraints(x, n, N)
+function constraints(x, n, N, F1, f1, F2, f2, H1, h1, H2, h2)
     @variables C[1:n*N]
     # TODO change R to parametric form
     for i in 1:N
-        C[4*(i-1)+1:4*(i-1)+4] = x[i, 5:8] .^2 - ones(4)*1.5^2
-    end
-    for i in 1:N
-        push!(C, (H*R1*t1 + h)'* x[i,9:12] + (F*R2*t2 + g)'*x[i,21:24])
-        push!(C, (H*R1*t1 + h)'* x[i,13:16] + (F*R2*t2 + g)'*x[i,25:28])
-        push!(C, (H*R1*t1 + h)'* x[i,17:20] + (F*R2*t2 + g)'*x[i,29:32])
-    end
-    for i in 1:N
-        push!(C, (H*R1*t1 + h)'* x[i,33:36] + (F*R2*t2 + g)'*x[i,45:48])
-        push!(C, (H*R1*t1 + h)'* x[i,37:40] + (F*R2*t2 + g)'*x[i,49:52])
-        push!(C, (H*R1*t1 + h)'* x[i,41:44] + (F*R2*t2 + g)'*x[i,53:56])
-    end
-    for i in 1:N
-        append!(C, -x[i,9:56])
-    end
-    for i in 1:N
-        push!(C, symbolic_norm(R2T*F'*x[i,21:24]) - 1)
-        push!(C, symbolic_norm(R2T*F'*x[i,25:28]) - 1)
-        push!(C, symbolic_norm(R2T*F'*x[i,29:32]) - 1)
-        push!(C, symbolic_norm(R2T*F'*x[i,45:48]) - 1)
-        push!(C, symbolic_norm(R2T*F'*x[i,49:52]) - 1)
-        push!(C, symbolic_norm(R2T*F'*x[i,53:56]) - 1)
-    end
 
-    for i in 1:N
-        append!(C, (R1T*H'*x[i,9:12] + R2T* F'*x[i,21:24]))
-        append!(C, (R1T*H'*x[i,33:36] + R2T* F'*x[i,45:48]))
-        append!(C, (R1T*H'*x[i,13:16] + R2T* F'*x[i,25:28]))
-        append!(C, (R1T*H'*x[i,37:40] + R2T* F'*x[i,49:52]))
-        append!(C, (R1T*H'*x[i,17:20] + R2T* F'*x[i,29:32]))
-        append!(C, (R1T*H'*x[i,41:44] + R2T* F'*x[i,53:56]))
+        C[4*(i-1)+1:4*(i-1)+4] = x[i, 5:8] .^2 - ones(4)*1.5^2
+
+        push!(C, (H2*R1(x[i, 2])*t2(x[i,2]) + h2)'* x[i,9:12] + (F1*R2(x[i,3])*t3(x[i,3]) + f1)'*x[i,21:24])
+        push!(C, (H2*R1(x[i,2])*t2(x[i,2]) + h2)'* x[i,13:16] + (F2*R2(x[i,4])*t4(x[i,4]) + f2)'*x[i,25:28])
+        push!(C, (H1*R1(x[i,1])*t1(x[i,1]) + h1)'* x[i,17:20] + (F2*R2(x[i,4])*t4(x[i,4]) + f2)'*x[i,29:32])
+
+        push!(C, (H2*R1(x[i, 2])*t2(x[i,2])+ h2)'* x[i,33:36] + (F1*R2(x[i,3])*t3(x[i,3]) + f1)'*x[i,45:48])
+        push!(C, (H1*R1(x[i,2])*t2(x[i,2]) + h1)'* x[i,37:40] + (F2*R2(x[i,4])*t4(x[i,4]) + f2)'*x[i,49:52])
+        push!(C, (H1*R1(x[i,1])*t1(x[i,1]) + h1)'* x[i,41:44] + (F2*R2(x[i,4])*t4(x[i,4]) + f2)'*x[i,53:56])
+
+        append!(C, -x[i,9:56])
+
+        push!(C, symbolic_norm(R2T(x[i,3])*F1'*x[i,21:24]) - 1)
+        push!(C, symbolic_norm(R2T(x[i,4])*F2'*x[i,25:28]) - 1)
+        push!(C, symbolic_norm(R2T(x[i,4])*F2'*x[i,29:32]) - 1)
+
+        push!(C, symbolic_norm(R2T(x[i,3])*F1'*x[i,45:48]) - 1)
+        push!(C, symbolic_norm(R2T(x[i,4])*F2'*x[i,49:52]) - 1)
+        push!(C, symbolic_norm(R2T(x[i,4])*F2'*x[i,53:56]) - 1)
+
+        append!(C, (R1T(x[i,2])*H2'*x[i,9:12] + R2T(x[i,3])* F1'*x[i,21:24]))
+        append!(C, (R1T(x[i,2])*H2'*x[i,13:16] + R2T(x[i,4])* F2'*x[i,25:28]))
+        append!(C, (R1T(x[i,1])*H1'*x[i,17:20] + R2T(x[i,4])* F2'*x[i,29:32]))
+
+        append!(C, (R1T(x[i,2])*H2'*x[i,33:36] + R2T(x[i,3])* F1'*x[i,45:48]))
+        append!(C, (R1T(x[i,2])*H2'*x[i,37:40] + R2T(x[i,4])* F2'*x[i,49:52]))
+        append!(C, (R1T(x[i,1])*H1'*x[i,41:44] + R2T(x[i,4])* F2'*x[i,53:56]))
+
     end
     return C
 end
