@@ -1,10 +1,10 @@
-t1(x) = [l1 * cos(x[1]); l1 * sin(x[1])]
+t1(x) = [l1 * cos(x); l1 * sin(x)]
 
-t2(x) = [l1 * cos(x[1]) + l2 * cos(x[2]); l1 * sin(x[1]) + l2 * sin(x[2])]
+t2(x) = [l1 * cos(x) + l2 * cos(x); l1 * sin(x) + l2 * sin(x)]
 
-t3(x) = [l3 * cos(x[3]); d - l3 * sin(x[3])]
+t3(x) = [l3 * cos(x); d - l3 * sin(x)]
 
-t4(x) = [l3 * cos(x[3]) + l4 * cos(x[4]); d - l3 * sin(x[3]) - l4 * sin(x[4])]
+t4(x) = [l3 * cos(x) + l4 * cos(x); d - l3 * sin(x) - l4 * sin(x)]
 
 R1(x) = [cos(x) -sin(x); sin(x) cos(x)]
 R2(x) = [cos(x) sin(x); -sin(x) cos(x)]
@@ -37,11 +37,11 @@ function state_transition(x, dt, N, θ_init)
 end
 
 function constraints(x, n, N, F1, f1, F2, f2, H1, h1, H2, h2)
-    @variables C[1:n*N]
+    @variables C[1:0]
     # TODO change R to parametric form
     for i in 1:N
 
-        C[4*(i-1)+1:4*(i-1)+4] = x[i, 5:8] .^2 - ones(4)*1.5^2
+        append!(C, x[i, 5:8] .^2 - ones(4)*1.5^2)
 
         push!(C, (H2*R1(x[i, 2])*t2(x[i,2]) + h2)'* x[i,9:12] + (F1*R2(x[i,3])*t3(x[i,3]) + f1)'*x[i,21:24])
         push!(C, (H2*R1(x[i,2])*t2(x[i,2]) + h2)'* x[i,13:16] + (F2*R2(x[i,4])*t4(x[i,4]) + f2)'*x[i,25:28])

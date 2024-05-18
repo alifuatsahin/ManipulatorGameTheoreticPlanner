@@ -33,8 +33,8 @@ const F2 = [1 0; -1 0; 0 1; 0 -1]
 const f2 = [l4/2; l4/2; w/2; w/2]
 
 # Number of constraints
-nce = 2
-nci = 14
+nce = 4
+nci = 72
 n = nce + nci
 
 # State dims
@@ -48,8 +48,8 @@ Q = 10000*I(4)
 θ_ref = [pi*2/3, pi*2/3, pi/6, pi/6]
 
 # Discretization
-dt = 0.1 # seconds [s]
-horizon = 5 # seconds [s]
+dt = 0.2 # seconds [s]
+horizon = 2 # seconds [s]
 N = convert(Int64, horizon/dt) # number of time steps
 
 # Lagrangian Multipliers
