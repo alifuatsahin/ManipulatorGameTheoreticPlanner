@@ -16,7 +16,7 @@ F = [1 0; -1 0; 0 1; 0 -1]
 g = [l/2; l/2; w/2; w/2]
 
 th1 = pi/2
-th2 = 2*pi/7
+th2 = 0
 
 R1 = [cos(th1) -sin(th1); sin(th1) cos(th1)]
 
@@ -24,7 +24,7 @@ R2 = [cos(th2) sin(th2); -sin(th2) cos(th2)]
 
 t1 = [0; 0]
 
-t2 = [0; 15]
+t2 = [0; -15]
 
 function objective(x)
     return (-H*R1*t1 - h)'* x[1:4] + (-F*R2*t2 - g)'*x[5:8]

@@ -33,7 +33,12 @@ const F2 = [1 0; -1 0; 0 1; 0 -1]
 const f2 = [l4/2; l4/2; w/2; w/2]
 
 # Number of constraints
-n = 4
+nce = 2
+nci = 14
+n = nce + nci
+
+# State dims
+state_dim = 64
 
 # Cost Matrices
 R = 0.1*I(4)
@@ -61,24 +66,24 @@ I_rho = Diagonal(ρ)
 # constraints
 states_n = length(θ_init)
 
-x_init = generate_trajectory(θ_init, θ_ref, N, dt)
+x_init = generate_trajectory(θ_init, θ_ref, state_dim, N, dt)
 
-@variables x[1:N, 1:size(x_init, 2)]
+@variables x[1:N, 1:state_dim]
 
-x1 = vcat([x[i, vcat(1:6)]' for i in 1:size(x, 1)]...)
-x2 = vcat([x[i, vcat(1:4, 7:8)]' for i in 1:size(x, 1)]...)
+x1 = vcat([x[i, vcat(1:6, 9:32)]' for i in 1:N]...)
+x2 = vcat([x[i, vcat(1:4, 7:8, 33:56)]' for i in 1:N]...)
 
 x_flat = [x'...]
 x1_flat = [x1'...]
 x2_flat = [x2'...]
 
-mu_1 = [x[:, 2*states_n+1:2*states_n+4]'...]
-mu_2 = [x[:, 3*states_n+1:3*states_n+4]'...]
+mu_1 = [x[:, end-7:end-4]'...]
+mu_2 = [x[:, end-3:end]'...]
 
 D = state_transition(x, dt, N, θ_init)
 D_mu = dot(mu_1,D) + dot(mu_2,D)
 
-C = constraints(x, N)
+C = constraints(x, n, N)
 C_lambda = dot(λ, C)
 
 J = player_cost(x, θ_ref, R, Q, N)
@@ -103,4 +108,4 @@ H = Symbolics.jacobian(G, x_flat)
 
 max_iter = 100
 
-y = alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, N)
+y = alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, nce, N)
