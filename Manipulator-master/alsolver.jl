@@ -5,7 +5,7 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter)
         println("Iteration: ", i)        
         
         flat_val = vcat(x_flat_val, lambda, rho)
-        vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat_val))
+        vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat))
         
         G_val = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (vals,))))
         H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (vals,))))
@@ -17,7 +17,7 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter)
         x_flat_val += α * δy
 
         flat_val = vcat(x_flat_val, lambda, rho)
-        vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat_val))
+        vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat))
         G_new = convert(Vector{Float64},Symbolics.value.(substitute.(G, (vals,))))
 
         if norm(G_new) < 0.01
@@ -33,7 +33,7 @@ function line_search(y, lambda, rho, flat, G_val, δy, β=0.1, τ=0.9)
 
         y_new = y + α * δy
         flat_val = vcat(y_new, lambda, rho)
-        vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat_val))
+        vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat))
 
         G_alpha = convert(Vector{Float64},Symbolics.value.(substitute.(G, (vals,))))
 
