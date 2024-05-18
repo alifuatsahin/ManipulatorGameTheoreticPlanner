@@ -64,7 +64,7 @@ I_rho = Diagonal(ρ)
 θ_init = [3*pi/4, 3*pi/4, pi/4, pi/4]
 
 # constraints
-states_n = length(θ_init)
+states_n = 28
 
 x_init = generate_trajectory(θ_init, θ_ref, state_dim, N, dt)
 
