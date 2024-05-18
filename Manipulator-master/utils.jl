@@ -77,12 +77,12 @@ end
 
 function generate_trajectory(θ_init, θ_ref, state_dim, N, dt)
     x_diff = θ_ref - θ_init
-    x = zeros(N, state_dim)
+    x = ones(N, state_dim)*0.1
     x_prev = θ_init
     for i in 1:N
         x[i, 1:4] = θ_init + (i/N)*x_diff
         x[i, 5:8] = (x[i, 1:4] - x_prev)/dt
-        x[i: 9:state_dim-8] = 0.1
+        x[i, state_dim-7:state_dim] = zeros(8)
         x_prev = x[i, 1:4]
     end
     return x
