@@ -97,8 +97,8 @@ G = []
 
 for i in 1:N
     global G
-    ∇L1_i = ∇L1[(i-1)*(states_n + 2) + 1:(i-1)*(states_n + 2) + 6]
-    ∇L2_i = ∇L2[(i-1)*(states_n + 2) + 1:(i-1)*(states_n + 2) + 6]
+    ∇L1_i = ∇L1[(i-1)*(states_n + 2) + 1:(i-1)*(states_n + 2) + 30]
+    ∇L2_i = ∇L2[(i-1)*(states_n + 2) + 1:(i-1)*(states_n + 2) + 30]
     D_i = D[4*(i-1)+1:4*i]
     G_i = vcat(∇L1_i, ∇L2_i, D_i)
     G = vcat(G, G_i)

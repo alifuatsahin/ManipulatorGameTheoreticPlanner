@@ -69,7 +69,7 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=3)
     y_flat = [y'...]
     vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
-
+    print(norm(C_val))
     for i in 1:length(C)
         if C_val[i] < EPS && lambda[i] == 0.0
             rho_s[i] = 0
