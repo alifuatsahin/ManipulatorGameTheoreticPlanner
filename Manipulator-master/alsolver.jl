@@ -5,7 +5,7 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter)
         println("Iteration: ", i)        
         
         flat_val = vcat(x_flat_val, lambda, rho)
-        vals = Dict(flat[i] => flat_val[i] for i in 1:24*N)
+        vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat_val))
         
         G_val = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (vals,))))
         H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (vals,))))
@@ -17,14 +17,14 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter)
         x_flat_val += α * δy
 
         flat_val = vcat(x_flat_val, lambda, rho)
-        vals = Dict(flat[i] => flat_val[i] for i in 1:24*N)
+        vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat_val))
         G_new = convert(Vector{Float64},Symbolics.value.(substitute.(G, (vals,))))
 
         if norm(G_new) < 0.01
-          return reshape(x_flat_val, 16, N)'
+          return reshape(x_flat_val, 64, N)'
         end
     end
-    return reshape(x_flat_val, 16, N)'
+    return reshape(x_flat_val, 64, N)'
 end
 
 function line_search(y, lambda, rho, flat, G_val, δy, β=0.1, τ=0.9)
@@ -33,7 +33,7 @@ function line_search(y, lambda, rho, flat, G_val, δy, β=0.1, τ=0.9)
 
         y_new = y + α * δy
         flat_val = vcat(y_new, lambda, rho)
-        vals = Dict(flat[i] => flat_val[i] for i in 1:24*N)
+        vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat_val))
 
         G_alpha = convert(Vector{Float64},Symbolics.value.(substitute.(G, (vals,))))
 
@@ -48,7 +48,7 @@ end
 
 function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
     y_flat = [y'...]
-    vals = Dict(x_flat[i] => y_flat[i] for i in 1:16*N)
+    vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
     if nci > 0
         for i in 1:nci
@@ -67,7 +67,7 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=3)
     rho = rho * gamma
     EPS = 1e-6
     y_flat = [y'...]
-    vals = Dict(x_flat[i] => y_flat[i] for i in 1:16*N)
+    vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
 
     for i in 1:length(C)
