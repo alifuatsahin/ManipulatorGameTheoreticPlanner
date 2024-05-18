@@ -1,16 +1,16 @@
-t_1(x) = [l1 * cos(x[1]); l1 * sin(x[1])]
+t1(x) = [l1 * cos(x[1]); l1 * sin(x[1])]
 
-t_2(x) = [l1 * cos(x[1]) + l2 * cos(x[2]); l1 * sin(x[1]) + l2 * sin(x[2])]
+t2(x) = [l1 * cos(x[1]) + l2 * cos(x[2]); l1 * sin(x[1]) + l2 * sin(x[2])]
 
-t_3(x) = [l3 * cos(x[3]); d - l3 * sin(x[3])]
+t3(x) = [l3 * cos(x[3]); d - l3 * sin(x[3])]
 
-t_4(x) = [l3 * cos(x[3]) + l4 * cos(x[4]); d - l3 * sin(x[3]) - l4 * sin(x[4])]
+t4(x) = [l3 * cos(x[3]) + l4 * cos(x[4]); d - l3 * sin(x[3]) - l4 * sin(x[4])]
 
-R_1(x) = [cos(x) -sin(x); sin(x) cos(x)]
-R_2(x) = [cos(x) sin(x); -sin(x) cos(x)]
+R1(x) = [cos(x) -sin(x); sin(x) cos(x)]
+R2(x) = [cos(x) sin(x); -sin(x) cos(x)]
 
-R_1T(x) = [cos(x) sin(x); -sin(x) cos(x)]
-R_2T(x) = [cos(x) -sin(x); sin(x) cos(x)]
+R1T(x) = [cos(x) sin(x); -sin(x) cos(x)]
+R2T(x) = [cos(x) -sin(x); sin(x) cos(x)]
 
 
 function symbolic_norm(v)
@@ -47,7 +47,7 @@ function constraints(x, n, N, F1, f1, F2, f2, H1, h1, H2, h2)
         push!(C, (H2*R1(x[i,2])*t2(x[i,2]) + h2)'* x[i,13:16] + (F2*R2(x[i,4])*t4(x[i,4]) + f2)'*x[i,25:28])
         push!(C, (H1*R1(x[i,1])*t1(x[i,1]) + h1)'* x[i,17:20] + (F2*R2(x[i,4])*t4(x[i,4]) + f2)'*x[i,29:32])
 
-        push!(C, (H2*R1(x[i, 2])*t2(x[i,2])+ h2)'* x[i,33:36] + (F1*R2(x[i,3])*t3(x[i,3]) + f1)'*x[i,45:48])
+        push!(C, (H2*R1(x[i,2])*t2(x[i,2])+ h2)'* x[i,33:36] + (F1*R2(x[i,3])*t3(x[i,3]) + f1)'*x[i,45:48])
         push!(C, (H1*R1(x[i,2])*t2(x[i,2]) + h1)'* x[i,37:40] + (F2*R2(x[i,4])*t4(x[i,4]) + f2)'*x[i,49:52])
         push!(C, (H1*R1(x[i,1])*t1(x[i,1]) + h1)'* x[i,41:44] + (F2*R2(x[i,4])*t4(x[i,4]) + f2)'*x[i,53:56])
 
