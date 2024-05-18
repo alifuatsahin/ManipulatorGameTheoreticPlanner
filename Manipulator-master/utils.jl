@@ -60,6 +60,7 @@ function constraints(x, N, F1, f1, F2, f2, H1, h1, H2, h2)
         push!(C, symbolic_norm(R2T(x[i,3])*F1'*x[i,45:48]) - 1)
         push!(C, symbolic_norm(R2T(x[i,4])*F2'*x[i,49:52]) - 1)
         push!(C, symbolic_norm(R2T(x[i,4])*F2'*x[i,53:56]) - 1)
+    end
 
     for i in 1:N
 
@@ -70,7 +71,6 @@ function constraints(x, N, F1, f1, F2, f2, H1, h1, H2, h2)
         append!(C, (R1T(x[i,2])*H2'*x[i,33:36] + R2T(x[i,3])* F1'*x[i,45:48]))
         append!(C, (R1T(x[i,2])*H2'*x[i,37:40] + R2T(x[i,4])* F2'*x[i,49:52]))
         append!(C, (R1T(x[i,1])*H1'*x[i,41:44] + R2T(x[i,4])* F2'*x[i,53:56]))
-
     end
     return C
 end
