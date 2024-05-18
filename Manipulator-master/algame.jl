@@ -33,8 +33,8 @@ const F2 = [1 0; -1 0; 0 1; 0 -1]
 const f2 = [l4/2; l4/2; w/2; w/2]
 
 # Number of constraints
-nce = 4
-nci = 72
+nce = 12
+nci = 64
 n = nce + nci
 
 # State dims
