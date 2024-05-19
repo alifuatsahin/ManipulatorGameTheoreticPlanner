@@ -53,12 +53,12 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
     vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
     if nci > 0
-        for i in 1:nci
+        for i in 1:nci*N
             lambda[i] = max(0, lambda[i] + rho[i] * C_val[i])
         end
     end
     if nce > 0
-        for i in nci+1:nci+nce
+        for i in (nci*N)+1:(nci+nce)*N
             lambda[i] = lambda[i] + rho[i] * C_val[i]
         end
     end

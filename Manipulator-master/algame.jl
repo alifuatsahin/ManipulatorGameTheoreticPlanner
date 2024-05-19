@@ -54,7 +54,7 @@ N = convert(Int64, horizon/dt) # number of time steps
 # Lagrangian Multipliers
 @variables λ[1:n*N]
 @variables ρ[1:n*N]
-lambda = ones(n*N)*0.5
+lambda = ones(n*N)*0.01
 rho  = ones(n*N)
 
 I_rho = Diagonal(ρ)
@@ -106,7 +106,7 @@ end
 
 H = Symbolics.jacobian(G, x_flat);
 println("Symbolic Hessian Done")
-max_iter = 100
+max_iter = 20
 
 y = alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, nce, N)
 

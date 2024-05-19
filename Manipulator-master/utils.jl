@@ -29,11 +29,11 @@ function constraints(x, N, F1, f1, F2, f2, H1, h1, H2, h2)
 
     t1(x) = [l1 * cos(x); l1 * sin(x)]
 
-    t2(x) = [l1 * cos(x) + l2 * cos(x); l1 * sin(x) + l2 * sin(x)]
+    t2(x1,x2) = [l1 * cos(x1) + l2 * cos(x2); l1 * sin(x1) + l2 * sin(x2)]
 
     t3(x) = [l3 * cos(x); d - l3 * sin(x)]
 
-    t4(x) = [l3 * cos(x) + l4 * cos(x); d - l3 * sin(x) - l4 * sin(x)]
+    t4(x3,x4,) = [l3 * cos(x3) + l4 * cos(x4); d - l3 * sin(x3) - l4 * sin(x4)]
 
     R1(x) = [cos(x) -sin(x); sin(x) cos(x)]
     R2(x) = [cos(x) sin(x); -sin(x) cos(x)]
@@ -46,7 +46,7 @@ function constraints(x, N, F1, f1, F2, f2, H1, h1, H2, h2)
 
         append!(C, x[i, 5:8] .^2 - ones(4)*2.5^2)
 
-        push!(C, (H2*R1(x[i,2])*t2(x[i,2]) + h2)'* x[i,9:12] + (F2*R2(x[i,4])*t4(x[i,4]) + f2)'*x[i,13:16] + 0.5)
+        push!(C, (H2*R1(x[i,2])*t2(x[i,1], x[i,2]) + h2)'* x[i,9:12] + (F2*R2(x[i,4])*t4(x[i,3], x[i,4]) + f2)'*x[i,13:16] + 0.5)
 
         append!(C, -x[i,9:16])
 
