@@ -106,7 +106,7 @@ end
 
 H = Symbolics.jacobian(G, x_flat);
 println("Symbolic Hessian Done")
-max_iter = 20
+max_iter = 100
 
 y = alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, nce, N)
 

@@ -1,8 +1,10 @@
-function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter)
+function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter; initial_damping=1e-3, beta=2, tolerance=1)
     x_flat_val = [x_init'...]
     flat = vcat(x_flat, λ, ρ)
+    damping = initial_damping
+
     for i in 1:max_iter
-        println("Iteration: ", i)        
+        println("Iteration: ", i)
         
         flat_val = vcat(x_flat_val, lambda, rho)
         vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat))
@@ -10,26 +12,43 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter)
         G_val = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (vals,))))
         H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (vals,))))
         
-        δy = - pinv(H_val) * G_val
-    
-        α = line_search(x_flat_val, lambda, rho, flat, G_val,  δy)
+        # Modify Hessian with damping factor for LM method
+        H_val_damped = H_val + damping * I(size(H_val, 1))
         
-        x_flat_val += α * δy
+        # Compute the step direction
+        δy = - pinv(H_val_damped) * G_val
+    
+        α = line_search(x_flat_val, lambda, rho, flat, G_val, δy)
+        
+        x_flat_val_new = x_flat_val + α * δy
 
-        flat_val = vcat(x_flat_val, lambda, rho)
-        vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat))
-        G_new = convert(Vector{Float64},Symbolics.value.(substitute.(G, (vals,))))
+        # Evaluate new state
+        flat_val_new = vcat(x_flat_val_new, lambda, rho)
+        vals_new = Dict(flat[i] => flat_val_new[i] for i in eachindex(flat))
+        G_new = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (vals_new,))))
+
         println("Norm: ", norm(G_new, 1))
 
-        if  norm(G_new, 1) < 1
+        if norm(G_new, 1) < tolerance
             println("Converged")
-          return reshape(x_flat_val, 24, N)'
+            return reshape(x_flat_val_new, 24, N)'
+        end
+
+        # Adjust damping factor
+        if norm(G_new, 1) < norm(G_val, 1)
+            # If improvement, decrease damping
+            damping /= beta
+            x_flat_val = x_flat_val_new
+        else
+            # If no improvement, increase damping
+            damping *= beta
         end
     end
     return reshape(x_flat_val, 24, N)'
 end
 
-function line_search(y, lambda, rho, flat, G_val, δy, β=0.2, τ=0.5)
+
+function line_search(y, lambda, rho, flat, G_val, δy, β=0.1, τ=0.5)
     α = 1
     while α > 1e-4  
 
