@@ -34,12 +34,12 @@ const F2 = [1 0; -1 0; 0 1; 0 -1]
 const f2 = [l4/2; l4/2; w/2; w/2]
 
 # Number of constraints
-nce = 2
-nci = 18
+nce = 4
+nci = 28
 n = nce + nci
 
 # State dims
-state_dim = 24
+state_dim = 32
 
 # Cost Matrices
 R = [20 0 0 0; 0 20 0 0; 0 0 20 0; 0 0 0 20]
@@ -56,7 +56,7 @@ N = convert(Int64, horizon/dt) # number of time steps
 # Lagrangian Multipliers
 @variables λ[1:n*N]
 @variables ρ[1:n*N]
-lambda = ones(n*N)*0.0
+lambda = ones(n*N)*0.1
 rho  = ones(n*N)
 
 I_rho = Diagonal(ρ)
@@ -65,14 +65,14 @@ I_rho = Diagonal(ρ)
 θ_init = [3*pi/4, 3*pi/4, pi/6, pi/6]
 
 # constraints
-states_n = 8
+states_n = 12
 
 x_init = generate_trajectory(θ_init, θ_ref, state_dim, N, dt)
 
 @variables x[1:N, 1:state_dim]
 
-x1 = vcat([x[i, vcat(1:6, 9:12)]' for i in 1:N]...)
-x2 = vcat([x[i, vcat(1:4, 7:8, 13:16)]' for i in 1:N]...)
+x1 = vcat([x[i, vcat(1:6, 9:16)]' for i in 1:N]...)
+x2 = vcat([x[i, vcat(1:4, 7:8, 17:24)]' for i in 1:N]...)
 
 x_flat = [x'...]
 x1_flat = [x1'...]
@@ -99,8 +99,8 @@ G = []
 
 for i in 1:N
     global G
-    ∇L1_i = ∇L1[(i-1)*(states_n + 2) + 1:(i-1)*(states_n + 2) + 10]
-    ∇L2_i = ∇L2[(i-1)*(states_n + 2) + 1:(i-1)*(states_n + 2) + 10]
+    ∇L1_i = ∇L1[(i-1)*(states_n + 2) + 1:(i-1)*(states_n + 2) + 14]
+    ∇L2_i = ∇L2[(i-1)*(states_n + 2) + 1:(i-1)*(states_n + 2) + 14]
     D_i = D[4*(i-1)+1:4*i]
     G_i = vcat(∇L1_i, ∇L2_i, D_i)
     G = vcat(G, G_i)

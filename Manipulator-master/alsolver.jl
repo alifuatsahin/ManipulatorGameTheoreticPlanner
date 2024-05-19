@@ -32,9 +32,9 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter; i
 
         println("Norm: ", norm(G_new, 1))
 
-        if norm(G_new, 1) < 200
+        if norm(G_new, 1) < 10
             println("Converged")
-            return reshape(x_flat_val_new, 24, N)'
+            return reshape(x_flat_val_new, 32, N)'
         end
 
         # Adjust damping factor
@@ -47,7 +47,7 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter; i
             damping *= beta
         end
     end
-    return reshape(x_flat_val, 24, N)'
+    return reshape(x_flat_val, 32, N)'
 end
 
 
