@@ -41,14 +41,14 @@ state_dim = 24
 
 # Cost Matrices
 R = [20 0 0 0; 0 20 0 0; 0 0 20 0; 0 0 0 20]
-Q = [300 0 0 0; 0 300 0 0; 0 0 200 0; 0 0 0 200]
+Q = [300 0 0 0; 0 300 0 0; 0 0 300 0; 0 0 0 300]
 
 # Reference
 θ_ref = [pi/4, pi/4, pi, pi]
 
 # Discretization
-dt = 0.2 # seconds [s]
-horizon = 6 # seconds [s]
+dt = 0.1 # seconds [s]
+horizon = 4 # seconds [s]
 N = convert(Int64, horizon/dt) # number of time steps
 
 # Lagrangian Multipliers

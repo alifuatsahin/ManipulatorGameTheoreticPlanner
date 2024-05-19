@@ -19,7 +19,7 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter)
         flat_val = vcat(x_flat_val, lambda, rho)
         vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat))
         G_new = convert(Vector{Float64},Symbolics.value.(substitute.(G, (vals,))))
-        println("Norm: ", norm(G_new))
+        println("Norm: ", norm(G_new, 1))
 
         if  norm(G_new, 1) < 1
             println("Converged")
@@ -71,7 +71,7 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=10)
     y_flat = [y'...]
     vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
-    
+
     positive_indices = findall(>(0), C_val)
     positive_values = C_val[positive_indices]
     
@@ -110,9 +110,9 @@ function alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, n
     y = x_init
     rho_s = rho
     done = false
-    max_iter = 5
+    max_iter_o = 10
     iter = 0
-    while !done
+    while !done && iter < max_iter_o
         y = newton_method(y, lambda, rho_s, G, H, N, x_flat, λ, ρ, max_iter)
         lambda = dual_ascent(y, x_flat, lambda, rho_s, C, nce, nci, N)
         rho, rho_s, done = increasing_schedule(rho, rho_s, lambda, C, y, x_flat)
