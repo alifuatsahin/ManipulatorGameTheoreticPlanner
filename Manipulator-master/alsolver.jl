@@ -1,3 +1,6 @@
+include("plotting.jl")
+include("utils.jl")
+
 function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter; initial_damping=1e-3, beta=2, tolerance=1)
     x_flat_val = [x_init'...]
     flat = vcat(x_flat, λ, ρ)
@@ -16,12 +19,12 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter; i
         H_val_damped = H_val + damping * I(size(H_val, 1))
         
         # Compute the step direction
-        δy = - pinv(H_val_damped) * G_val
+        δy = - inv(H_val_damped) * G_val
     
         α = line_search(x_flat_val, lambda, rho, flat, G_val, δy)
         
         x_flat_val_new = x_flat_val + α * δy
-
+        
         # Evaluate new state
         flat_val_new = vcat(x_flat_val_new, lambda, rho)
         vals_new = Dict(flat[i] => flat_val_new[i] for i in eachindex(flat))
@@ -29,7 +32,7 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter; i
 
         println("Norm: ", norm(G_new, 1))
 
-        if norm(G_new, 1) < tolerance
+        if norm(G_new, 1) < 200
             println("Converged")
             return reshape(x_flat_val_new, 24, N)'
         end
@@ -48,7 +51,7 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter; i
 end
 
 
-function line_search(y, lambda, rho, flat, G_val, δy, β=0.1, τ=0.5)
+function line_search(y, lambda, rho, flat, G_val, δy, β=0.2, τ=0.5)
     α = 1
     while α > 1e-4  
 
@@ -133,6 +136,12 @@ function alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, n
     iter = 0
     while !done && iter < max_iter_o
         y = newton_method(y, lambda, rho_s, G, H, N, x_flat, λ, ρ, max_iter)
+        int_y_1 = generate_intermediate_points(y[:, 1], 5);
+        int_y_2 = generate_intermediate_points(y[:, 2], 5);
+        int_y_3 = generate_intermediate_points(y[:, 3], 5);
+        int_y_4 = generate_intermediate_points(y[:, 4], 5);
+        animate_robots(int_y_1, int_y_2, int_y_3, int_y_4, d, l1, l2, l3, l4, w)
+
         lambda = dual_ascent(y, x_flat, lambda, rho_s, C, nce, nci, N)
         rho, rho_s, done = increasing_schedule(rho, rho_s, lambda, C, y, x_flat)
         iter += 1

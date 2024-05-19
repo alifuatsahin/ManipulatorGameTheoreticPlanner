@@ -1,5 +1,5 @@
 function symbolic_norm(v)
-    return sqrt(sum([vi^2 for vi in v]))
+    return sum([vi^2 for vi in v])
 end
 
 function player_cost(x, θ_ref, R, Q, N)
@@ -44,7 +44,9 @@ function constraints(x, N, F1, f1, F2, f2, H1, h1, H2, h2)
     # TODO change R to parametric form
     for i in 1:N
 
-        append!(C, x[i, 5:8] .^2 - ones(4)*2.5^2)
+        append!(C, x[i, 5:8] .^2 - ones(4)*5.5^2)
+
+        append!(C, x[i, 1:4]  - ones(4)*pi)
 
         push!(C, (H2*R1(x[i,2])*t2(x[i,1], x[i,2]) + h2)'* x[i,9:12] + (F2*R2(x[i,4])*t4(x[i,3], x[i,4]) + f2)'*x[i,13:16])
 
@@ -64,7 +66,7 @@ end
 
 function generate_trajectory(θ_init, θ_ref, state_dim, N, dt)
     x_diff = θ_ref - θ_init
-    x = rand(N, state_dim)
+    x = ones(N, state_dim)*0.05
     x_prev = θ_init
     for i in 1:N
         x[i, 1:4] = θ_init + (i/N)*x_diff
@@ -91,4 +93,5 @@ function generate_intermediate_points(y, num_intermediate_points)
     
     return vcat(interpolated_y...)
 end
+
 

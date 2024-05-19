@@ -8,6 +8,8 @@ include("utils.jl")
 include("alsolver.jl")
 include("plotting.jl")
 
+global reshaped_value = nothing
+
 # Link lengths
 const l1 = 6.0
 const l2 = 6.0
@@ -33,7 +35,7 @@ const f2 = [l4/2; l4/2; w/2; w/2]
 
 # Number of constraints
 nce = 2
-nci = 14
+nci = 18
 n = nce + nci
 
 # State dims
@@ -44,23 +46,23 @@ R = [20 0 0 0; 0 20 0 0; 0 0 20 0; 0 0 0 20]
 Q = [300 0 0 0; 0 300 0 0; 0 0 300 0; 0 0 0 300]
 
 # Reference
-θ_ref = [pi/4, pi/4, pi, pi]
+θ_ref = [pi/4, pi/4, 5*pi/6, 5*pi/6]
 
 # Discretization
 dt = 0.1 # seconds [s]
-horizon = 4 # seconds [s]
+horizon = 1 # seconds [s]
 N = convert(Int64, horizon/dt) # number of time steps
 
 # Lagrangian Multipliers
 @variables λ[1:n*N]
 @variables ρ[1:n*N]
-lambda = ones(n*N)*0.01
+lambda = ones(n*N)*0.0
 rho  = ones(n*N)
 
 I_rho = Diagonal(ρ)
 
 # Initial Guess
-θ_init = [3*pi/4, 3*pi/4, pi/4, pi/4]
+θ_init = [3*pi/4, 3*pi/4, pi/6, pi/6]
 
 # constraints
 states_n = 8
