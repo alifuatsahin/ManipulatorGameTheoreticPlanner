@@ -19,15 +19,17 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter)
         flat_val = vcat(x_flat_val, lambda, rho)
         vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat))
         G_new = convert(Vector{Float64},Symbolics.value.(substitute.(G, (vals,))))
+        println("Norm: ", norm(G_new))
 
-        if norm(G_new) < 0.01
-          return reshape(x_flat_val, 64, N)'
+        if  norm(G_new, 1) < 1
+            println("Converged")
+          return reshape(x_flat_val, 24, N)'
         end
     end
-    return reshape(x_flat_val, 64, N)'
+    return reshape(x_flat_val, 24, N)'
 end
 
-function line_search(y, lambda, rho, flat, G_val, δy, β=0.1, τ=0.9)
+function line_search(y, lambda, rho, flat, G_val, δy, β=0.2, τ=0.5)
     α = 1
     while α > 1e-4  
 
@@ -63,13 +65,13 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
     return lambda
 end
 
-function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=3)
+function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=10)
     rho = rho * gamma
     EPS = 1e-6
     y_flat = [y'...]
     vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
-    print(norm(C_val))
+    println(C_val)
     for i in 1:length(C)
         if C_val[i] < EPS && lambda[i] == 0.0
             rho_s[i] = 0
@@ -92,10 +94,13 @@ function alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, n
     y = x_init
     rho_s = rho
     done = false
-    while !done
+    max_iter = 5
+    iter = 0
+    while !done && iter < max_iter
         y = newton_method(y, lambda, rho_s, G, H, N, x_flat, λ, ρ, max_iter)
         lambda = dual_ascent(y, x_flat, lambda, rho_s, C, nce, nci, N)
         rho, rho_s, done = increasing_schedule(rho, rho_s, lambda, C, y, x_flat)
+        iter += 1
     end
     return y
 end

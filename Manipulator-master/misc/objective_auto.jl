@@ -416,7 +416,7 @@ end
 
 
 
-@variables x[1:32]
+# @variables x[1:32]
 
 # Define the function Polyhedral_1_Aug symbolically
 
@@ -445,7 +445,8 @@ Polyhedral_1_Aug_sym(x, lambda, idx1, idx2) = begin
     end 
 end
 
-y = [x...]
+# y = [x...]
 
-gradient_sym = Symbolics.gradient(Polyhedral_1_Aug_sym(x, lambda[1,:], 2, 3), y, simplify=true)
+# gradient_sym = Symbolics.gradient(Polyhedral_1_Aug_sym(x, lambda[1,:], 2, 3), y, simplify=true)
 
+total_hess = TotalHessian(x, x_0, 1.0, true, 0.1, 20)

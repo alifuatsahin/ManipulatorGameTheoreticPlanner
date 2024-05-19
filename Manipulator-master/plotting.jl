@@ -78,7 +78,7 @@ function animate_robots(theta1_traj, theta2_traj, theta3_traj, theta4_traj, d, l
         push!(tip_positions4, (x4, y4))
 
         # Clear the plot by creating a new plot object in each iteration
-        p = plot(xlim=(-2, 2), ylim=(-2, 2 + d), legend=false, aspect_ratio=:equal)
+        p = plot(xlim=(-d/2, d/2), ylim=(-2, 2 + d), legend=false, aspect_ratio=:equal)
         plot!(p, [c[1] for c in link1_corners], [c[2] for c in link1_corners], seriestype=:shape, color=:blue, label="")
         plot!(p, [c[1] for c in link2_corners], [c[2] for c in link2_corners], seriestype=:shape, color=:red, label="")
         plot!(p, [c[1] for c in link3_corners], [c[2] for c in link3_corners], seriestype=:shape, color=:green, label="")
@@ -97,14 +97,7 @@ function animate_robots(theta1_traj, theta2_traj, theta3_traj, theta4_traj, d, l
         scatter!(p, [pos[1] for pos in tip_positions4], [pos[2] for pos in tip_positions4], color=:cyan, label="Tip 4 Trajectory", markersize = 1)
 
         display(p)
-    end every 2
+        sleep(0.1)
+    end every 3
 end
 
-# Example usage
-theta1_traj = range(0, stop=2π, length=100)
-theta2_traj = range(0, stop=π, length=100)
-theta3_traj = range(0, stop=2π, length=100)
-theta4_traj = range(0, stop=π, length=100)
-d = 1.5  # Distance between the bases of the two robots
-
-animate_robots(theta1_traj, theta2_traj, theta3_traj, theta4_traj, d)
