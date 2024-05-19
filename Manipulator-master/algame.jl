@@ -33,21 +33,21 @@ const f2 = [l4/2; l4/2; w/2; w/2]
 
 # Number of constraints
 nce = 2
-nci = 10
+nci = 14
 n = nce + nci
 
 # State dims
 state_dim = 24
 
 # Cost Matrices
-R = [20 0 0 0; 0 20 0 0; 0 0 50 0; 0 0 0 50]
-Q = [100 0 0 0; 0 100 0 0; 0 0 50 0; 0 0 0 50]
+R = [20 0 0 0; 0 20 0 0; 0 0 20 0; 0 0 0 20]
+Q = [300 0 0 0; 0 300 0 0; 0 0 200 0; 0 0 0 200]
 
 # Reference
 θ_ref = [pi/4, pi/4, pi, pi]
 
 # Discretization
-dt = 0.1 # seconds [s]
+dt = 0.2 # seconds [s]
 horizon = 6 # seconds [s]
 N = convert(Int64, horizon/dt) # number of time steps
 
@@ -106,7 +106,6 @@ end
 
 H = Symbolics.jacobian(G, x_flat);
 println("Symbolic Hessian Done")
-
 max_iter = 100
 
 y = alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, nce, N)
@@ -117,6 +116,7 @@ int_y_2 = generate_intermediate_points(y[:, 2], 5);
 int_y_3 = generate_intermediate_points(y[:, 3], 5);
 int_y_4 = generate_intermediate_points(y[:, 4], 5);
 
-animate_robots(int_y_1, int_y_2, int_y_3, int_y_4, 20.0, l1, l2, l3, l4, w)
+animate_robots(int_y_1, int_y_2, int_y_3, int_y_4, d, l1, l2, l3, l4, w)
 
-animate_robots(y[:, 1], y[:, 2], y[:, 3], y[:, 4], 20.0, l1, l2, l3, l4, w)
+animate_robots(y[:, 1], y[:, 2], y[:, 3], y[:, 4], d, l1, l2, l3, l4, w)
+

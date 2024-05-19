@@ -71,7 +71,23 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=10)
     y_flat = [y'...]
     vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
-    println(C_val)
+    
+    positive_indices = findall(>(0), C_val)
+    positive_values = C_val[positive_indices]
+    
+   
+    if length(positive_values) < 10
+        println("There are fewer than 10 positive values.")
+        top_10_indices = sortperm(positive_indices, rev = true)
+    else
+        sorted_positive_indices = sortperm(positive_values, rev=true)
+        top_10_indices = positive_indices[sorted_positive_indices[1:10]]
+    end
+    
+    println("Indices of the top 10 maximum positive values in C_val: ", top_10_indices)
+    println("Number of constraint violations: ", length(positive_values))
+    
+    
     for i in 1:length(C)
         if C_val[i] < EPS && lambda[i] == 0.0
             rho_s[i] = 0
@@ -96,7 +112,7 @@ function alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, n
     done = false
     max_iter = 5
     iter = 0
-    while !done && iter < max_iter
+    while !done
         y = newton_method(y, lambda, rho_s, G, H, N, x_flat, λ, ρ, max_iter)
         lambda = dual_ascent(y, x_flat, lambda, rho_s, C, nce, nci, N)
         rho, rho_s, done = increasing_schedule(rho, rho_s, lambda, C, y, x_flat)
