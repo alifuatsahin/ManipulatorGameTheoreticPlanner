@@ -7,8 +7,7 @@ using LinearSolve
 include("utils.jl")
 include("alsolver.jl")
 include("plotting.jl")
-
-global reshaped_value = nothing
+include("warm_start.jl")
 
 # Link lengths
 const l1 = 6.0
@@ -35,7 +34,7 @@ const f2 = [l4/2; l4/2; w/2; w/2]
 
 # Number of constraints
 nce = 4
-nci = 28
+nci = 24
 n = nce + nci
 
 # State dims
@@ -43,14 +42,14 @@ state_dim = 32
 
 # Cost Matrices
 R = [20 0 0 0; 0 20 0 0; 0 0 20 0; 0 0 0 20]
-Q = [300 0 0 0; 0 300 0 0; 0 0 300 0; 0 0 0 300]
+Q = [50 0 0 0; 0 50 0 0; 0 0 50 0; 0 0 0 50]
 
 # Reference
 θ_ref = [pi/4, pi/4, 5*pi/6, 5*pi/6]
 
 # Discretization
-dt = 0.1 # seconds [s]
-horizon = 1 # seconds [s]
+dt = 0.2 # seconds [s]
+horizon = 4 # seconds [s]
 N = convert(Int64, horizon/dt) # number of time steps
 
 # Lagrangian Multipliers
@@ -68,6 +67,8 @@ I_rho = Diagonal(ρ)
 states_n = 12
 
 x_init = generate_trajectory(θ_init, θ_ref, state_dim, N, dt)
+
+x_init = warm_start(x_init, l1, l2, l3, l4, d)
 
 @variables x[1:N, 1:state_dim]
 
@@ -113,10 +114,10 @@ max_iter = 100
 y = alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, nce, N)
 
 
-int_y_1 = generate_intermediate_points(y[:, 1], 5);
-int_y_2 = generate_intermediate_points(y[:, 2], 5);
-int_y_3 = generate_intermediate_points(y[:, 3], 5);
-int_y_4 = generate_intermediate_points(y[:, 4], 5);
+int_y_1 = generate_intermediate_points(y[:, 1], 2);
+int_y_2 = generate_intermediate_points(y[:, 2], 2);
+int_y_3 = generate_intermediate_points(y[:, 3], 2);
+int_y_4 = generate_intermediate_points(y[:, 4], 2);
 
 animate_robots(int_y_1, int_y_2, int_y_3, int_y_4, d, l1, l2, l3, l4, w)
 

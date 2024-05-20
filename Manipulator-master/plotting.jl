@@ -39,7 +39,7 @@ function get_jaw_corners(x, y, theta, jaw_length, jaw_width)
 end
 
 # Animation function
-function animate_robots(theta1_traj, theta2_traj, theta3_traj, theta4_traj, d, l1=1.0, l2=1.0, l3= 1.0, l4 = 1.0, width=0.1, jaw_length=0.2, jaw_width=0.05)
+function animate_robots(theta1_traj, theta2_traj, theta3_traj, theta4_traj, d, l1=1.0, l2=1.0, l3= 1.0, l4 = 1.0, width=0.1, jaw_length=0.2, jaw_width=0.05, output_file="robot_animation.gif")
     n_frames = length(theta1_traj)  # Number of frames in the animation
     
     # Store the tip positions for the trajectory
@@ -48,8 +48,8 @@ function animate_robots(theta1_traj, theta2_traj, theta3_traj, theta4_traj, d, l
     tip_positions3 = [(0.0, d)]  # Initial position of the first tip of robot 2 (base shifted by d)
     tip_positions4 = [(0.0, d)]  # Initial position of the second tip of robot 2
 
-    # Animation loop
-    @gif for i in 1:n_frames
+    # Initialize plot
+    anim = @animate for i in 1:n_frames
         theta1 = theta1_traj[i]
         theta2 = theta2_traj[i]
         theta3 = theta3_traj[i]
@@ -97,7 +97,7 @@ function animate_robots(theta1_traj, theta2_traj, theta3_traj, theta4_traj, d, l
         scatter!(p, [pos[1] for pos in tip_positions4], [pos[2] for pos in tip_positions4], color=:cyan, label="Tip 4 Trajectory", markersize = 1)
 
         display(p)
-        sleep(0.1)
     end every 3
+    
+    gif(anim, "animation.gif", fps = 10)
 end
-

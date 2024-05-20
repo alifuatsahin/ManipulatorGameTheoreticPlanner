@@ -5,53 +5,61 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter; i
     x_flat_val = [x_init'...]
     flat = vcat(x_flat, λ, ρ)
     damping = initial_damping
+    try
+        for i in 1:max_iter
+            println("Iteration: ", i)
+            
+            flat_val = vcat(x_flat_val, lambda, rho)
+            vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat))
+            
+            G_val = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (vals,))))
+            H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (vals,))))
+            
+            # Modify Hessian with damping factor for LM method
+            H_val_damped = H_val + damping * I(size(H_val, 1))
+            
+            # Compute the step direction
+            δy = - inv(H_val_damped) * G_val
+        
+            α = line_search(x_flat_val, lambda, rho, flat, G_val, δy)
+            
+            x_flat_val = x_flat_val + α * δy
+            
+            # Evaluate new state
+            flat_val_new = vcat(x_flat_val, lambda, rho)
+            vals_new = Dict(flat[i] => flat_val_new[i] for i in eachindex(flat))
+            G_new = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (vals_new,))))
 
-    for i in 1:max_iter
-        println("Iteration: ", i)
-        
-        flat_val = vcat(x_flat_val, lambda, rho)
-        vals = Dict(flat[i] => flat_val[i] for i in eachindex(flat))
-        
-        G_val = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (vals,))))
-        H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (vals,))))
-        
-        # Modify Hessian with damping factor for LM method
-        H_val_damped = H_val + damping * I(size(H_val, 1))
-        
-        # Compute the step direction
-        δy = - inv(H_val_damped) * G_val
-    
-        α = line_search(x_flat_val, lambda, rho, flat, G_val, δy)
-        
-        x_flat_val_new = x_flat_val + α * δy
-        
-        # Evaluate new state
-        flat_val_new = vcat(x_flat_val_new, lambda, rho)
-        vals_new = Dict(flat[i] => flat_val_new[i] for i in eachindex(flat))
-        G_new = convert(Vector{Float64}, Symbolics.value.(substitute.(G, (vals_new,))))
+            println("Norm: ", norm(G_new, 1))
 
-        println("Norm: ", norm(G_new, 1))
+            if norm(G_new, 1) < 1
+                println("Converged")
+                return reshape(x_flat_val, 32, N)'
+            end
 
-        if norm(G_new, 1) < 10
-            println("Converged")
-            return reshape(x_flat_val_new, 32, N)'
+            #= # Adjust damping factor
+            # if norm(G_new, 1) < norm(G_val, 1)
+            #     # If improvement, decrease damping
+            #     damping /= beta
+            #     x_flat_val = x_flat_val_new
+            # else
+            #     # If no improvement, increase damping
+            #     damping *= beta
+            # end =#
         end
-
-        # Adjust damping factor
-        if norm(G_new, 1) < norm(G_val, 1)
-            # If improvement, decrease damping
-            damping /= beta
-            x_flat_val = x_flat_val_new
+    catch e
+        if isa(e, InterruptException)
+            y = reshape(x_flat_val, 32, N)'
+            return y
         else
-            # If no improvement, increase damping
-            damping *= beta
+            rethrow(e)
         end
-    end
+    end 
     return reshape(x_flat_val, 32, N)'
 end
 
 
-function line_search(y, lambda, rho, flat, G_val, δy, β=0.2, τ=0.5)
+function line_search(y, lambda, rho, flat, G_val, δy, β=0.1, τ=0.5)
     α = 1
     while α > 1e-4  
 
@@ -132,7 +140,7 @@ function alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, n
     y = x_init
     rho_s = rho
     done = false
-    max_iter_o = 10
+    max_iter_o = 1
     iter = 0
     while !done && iter < max_iter_o
         y = newton_method(y, lambda, rho_s, G, H, N, x_flat, λ, ρ, max_iter)
