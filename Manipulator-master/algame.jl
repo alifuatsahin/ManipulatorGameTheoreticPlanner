@@ -33,12 +33,12 @@ const F2 = [1 0; -1 0; 0 1; 0 -1]
 const f2 = [l4/2; l4/2; w/2; w/2]
 
 # Number of constraints
-nce = 2
-nci = 14
+nce = 4
+nci = 24
 n = nce + nci
 
 # State dims
-state_dim = 24
+state_dim = 32
 
 # Cost Matrices
 R = [20 0 0 0; 0 20 0 0; 0 0 20 0; 0 0 0 20]
@@ -64,7 +64,7 @@ I_rho = Diagonal(ρ)
 θ_init = [3*pi/4, 3*pi/4, pi/6, pi/6]
 
 # constraints
-states_n = 10
+states_n = 14
 
 x_init = generate_trajectory(θ_init, θ_ref, state_dim, N, dt)
 
@@ -72,8 +72,8 @@ x_init = warm_start(x_init, l1, l2, l3, l4, d)
 
 @variables x[1:N, 1:state_dim]
 
-x1 = vcat([x[i, vcat(1:6, 9:12)]' for i in 1:N]...)
-x2 = vcat([x[i, vcat(1:4, 7:8, 13:16)]' for i in 1:N]...)
+x1 = vcat([x[i, vcat(1:6, 9:16)]' for i in 1:N]...)
+x2 = vcat([x[i, vcat(1:4, 7:8, 17:24)]' for i in 1:N]...)
 
 x_flat = [x'...]
 x1_flat = [x1'...]
@@ -83,17 +83,22 @@ mu_1 = [x[:, end-7:end-4]'...]
 mu_2 = [x[:, end-3:end]'...]
 
 D = state_transition(x, dt, N, θ_init);
-D_mu = dot(mu_1,D) + dot(mu_2,D);
+D_1mu = dot(mu_1, D);
+D_2mu = dot(mu_2, D);
+D_mu = D_1mu + D_2mu;
 
 C = constraints(x, N, F1 ,f1, F2, f2, H1, h1, H2, h2);
 C_lambda = dot(λ, C);
 
 J = player_cost(x, θ_ref, R, Q, N);
 
+L1 = J + D_1mu + C_lambda + 1/2*C'*I_rho*C;
+L2 = J + D_2mu + C_lambda + 1/2*C'*I_rho*C;
+
 L = J + D_mu + C_lambda + 1/2*C'*I_rho*C;
 
-∇L1 = Symbolics.gradient(L, x1_flat);
-∇L2 = Symbolics.gradient(L, x2_flat);
+∇L1 = Symbolics.gradient(L1, x1_flat);
+∇L2 = Symbolics.gradient(L2, x2_flat);
 
 println("Symbolic Differentiation Done")
 G = []

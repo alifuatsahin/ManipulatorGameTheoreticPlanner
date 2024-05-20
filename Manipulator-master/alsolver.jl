@@ -97,7 +97,7 @@ end
 
 function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=10)
     rho = rho * gamma
-    EPS = 1e-6
+    EPS = 1e-3
     y_flat = [y'...]
     vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
