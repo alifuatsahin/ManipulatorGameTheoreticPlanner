@@ -1,7 +1,7 @@
 include("plotting.jl")
 include("utils.jl")
 
-function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter; initial_damping=1e-3, beta=2, tolerance=1)
+function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter, state_dim, initial_damping=1e-3, beta=2, tolerance=1)
     x_flat_val = [x_init'...]
     flat = vcat(x_flat, λ, ρ)
     damping = initial_damping
@@ -34,7 +34,7 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter; i
 
             if norm(G_new, 1) < 1
                 println("Converged")
-                return reshape(x_flat_val, 32, N)'
+                return reshape(x_flat_val, state_dim, N)'
             end
 
             #= # Adjust damping factor
@@ -49,13 +49,13 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter; i
         end
     catch e
         if isa(e, InterruptException)
-            y = reshape(x_flat_val, 32, N)'
+            y = reshape(x_flat_val, state_dim, N)'
             return y
         else
             rethrow(e)
         end
     end 
-    return reshape(x_flat_val, 32, N)'
+    return reshape(x_flat_val, state_dim, N)'
 end
 
 
@@ -136,14 +136,14 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=10)
     return rho, rho_s, done
 end
 
-function alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, nce, N)
+function alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, nce, N, state_dim)
     y = x_init
     rho_s = rho
     done = false
-    max_iter_o = 1
+    max_iter_o = 5
     iter = 0
     while !done && iter < max_iter_o
-        y = newton_method(y, lambda, rho_s, G, H, N, x_flat, λ, ρ, max_iter)
+        y = newton_method(y, lambda, rho_s, G, H, N, x_flat, λ, ρ, max_iter, state_dim)
         int_y_1 = generate_intermediate_points(y[:, 1], 5);
         int_y_2 = generate_intermediate_points(y[:, 2], 5);
         int_y_3 = generate_intermediate_points(y[:, 3], 5);

@@ -33,12 +33,12 @@ const F2 = [1 0; -1 0; 0 1; 0 -1]
 const f2 = [l4/2; l4/2; w/2; w/2]
 
 # Number of constraints
-nce = 4
-nci = 24
+nce = 2
+nci = 14
 n = nce + nci
 
 # State dims
-state_dim = 32
+state_dim = 24
 
 # Cost Matrices
 R = [20 0 0 0; 0 20 0 0; 0 0 20 0; 0 0 0 20]
@@ -64,7 +64,7 @@ I_rho = Diagonal(ρ)
 θ_init = [3*pi/4, 3*pi/4, pi/6, pi/6]
 
 # constraints
-states_n = 12
+states_n = 10
 
 x_init = generate_trajectory(θ_init, θ_ref, state_dim, N, dt)
 
@@ -72,8 +72,8 @@ x_init = warm_start(x_init, l1, l2, l3, l4, d)
 
 @variables x[1:N, 1:state_dim]
 
-x1 = vcat([x[i, vcat(1:6, 9:16)]' for i in 1:N]...)
-x2 = vcat([x[i, vcat(1:4, 7:8, 17:24)]' for i in 1:N]...)
+x1 = vcat([x[i, vcat(1:6, 9:12)]' for i in 1:N]...)
+x2 = vcat([x[i, vcat(1:4, 7:8, 13:16)]' for i in 1:N]...)
 
 x_flat = [x'...]
 x1_flat = [x1'...]
@@ -100,8 +100,8 @@ G = []
 
 for i in 1:N
     global G
-    ∇L1_i = ∇L1[(i-1)*(states_n + 2) + 1:(i-1)*(states_n + 2) + 14]
-    ∇L2_i = ∇L2[(i-1)*(states_n + 2) + 1:(i-1)*(states_n + 2) + 14]
+    ∇L1_i = ∇L1[(i-1)*(states_n) + 1:(i)*(states_n)]
+    ∇L2_i = ∇L2[(i-1)*(states_n) + 1:(i)*(states_n)]
     D_i = D[4*(i-1)+1:4*i]
     G_i = vcat(∇L1_i, ∇L2_i, D_i)
     G = vcat(G, G_i)
@@ -111,7 +111,7 @@ H = Symbolics.jacobian(G, x_flat);
 println("Symbolic Hessian Done")
 max_iter = 100
 
-y = alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, nce, N)
+y = alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, nce, N, state_dim)
 
 
 int_y_1 = generate_intermediate_points(y[:, 1], 2);

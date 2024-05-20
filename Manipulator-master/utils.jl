@@ -48,18 +48,14 @@ function constraints(x, N, F1, f1, F2, f2, H1, h1, H2, h2)
 
         push!(C, ((H2*R1(x[i,2])*t2(x[i,1], x[i,2]) + h2)'* x[i,9:12] + (F2*R2(x[i,4])*t4(x[i,3], x[i,4]) + f2)'*x[i,13:16] + 1.5))
 
-        push!(C, ((H2*R1(x[i,2])*t2(x[i,1], x[i,2]) + h2)'* x[i,17:20] + (F2*R2(x[i,4])*t4(x[i,3], x[i,4]) + f2)'*x[i,21:24] + 1.5))
-
-        append!(C, -x[i,9:24])
+        append!(C, -x[i,9:16])
 
         push!(C, (symbolic_norm(F2'*x[i,13:16]) - 1))
-        push!(C, (symbolic_norm(F2'*x[i,21:24]) - 1))
 
     end
 
     for i in 1:N
         append!(C,(R1T(x[i,2])*H2'*x[i,9:12] + R2T(x[i,4])* F2'*x[i,13:16]))
-        append!(C,(R1T(x[i,2])*H2'*x[i,17:20] + R2T(x[i,4])* F2'*x[i,21:24]))
     end
     return C
 end
