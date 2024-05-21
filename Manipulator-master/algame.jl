@@ -42,7 +42,8 @@ state_dim = 32
 
 # Cost Matrices
 R = [20 0 0 0; 0 20 0 0; 0 0 20 0; 0 0 0 20]
-Q = [50 0 0 0; 0 50 0 0; 0 0 50 0; 0 0 0 50]
+Q1 = [50 0 0 0; 0 50 0 0; 0 0 0 0; 0 0 0 0]
+Q2 = [0 0 0 0; 0 0 0 0; 0 0 50 0; 0 0 0 50]
 
 # Reference
 θ_ref = [pi/4, pi/4, 5*pi/6, 5*pi/6]
@@ -90,12 +91,11 @@ D_mu = D_1mu + D_2mu;
 C = constraints(x, N, F1 ,f1, F2, f2, H1, h1, H2, h2);
 C_lambda = dot(λ, C);
 
-J = player_cost(x, θ_ref, R, Q, N);
+J1 = player_cost(x, θ_ref, R, Q1, N);
+J2 = player_cost(x, θ_ref, R, Q2, N);
 
-L1 = J + D_1mu + C_lambda + 1/2*C'*I_rho*C;
-L2 = J + D_2mu + C_lambda + 1/2*C'*I_rho*C;
-
-L = J + D_mu + C_lambda + 1/2*C'*I_rho*C;
+L1 = J1 + D_1mu + C_lambda + 1/2*C'*I_rho*C;
+L2 = J2 + D_2mu + C_lambda + 1/2*C'*I_rho*C;
 
 ∇L1 = Symbolics.gradient(L1, x1_flat);
 ∇L2 = Symbolics.gradient(L2, x2_flat);
