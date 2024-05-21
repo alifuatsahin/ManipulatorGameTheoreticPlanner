@@ -16,10 +16,10 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter, s
             H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (vals,))))
             
             # Modify Hessian with damping factor for LM method
-            H_val_damped = H_val + damping * I(size(H_val, 1))
+            # H_val_damped = H_val + damping * I(size(H_val, 1))
             
             # Compute the step direction
-            δy = - inv(H_val_damped) * G_val
+            δy = - pinv(H_val) * G_val
         
             α = line_search(x_flat_val, lambda, rho, flat, G_val, δy)
             
@@ -84,7 +84,7 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
     if nci > 0
         for i in 1:nci*N
-            lambda[i] = max(0, lambda[i] + rho[i] * C_val[i])
+            lambda[i] = max(0, lambda[i] - rho[i] * C_val[i])
         end
     end
     if nce > 0
@@ -102,7 +102,7 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=10)
     vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
 
-    positive_indices = findall(>(0), C_val)
+    positive_indices = findall(<(0), C_val)
     positive_values = C_val[positive_indices]
     
    
@@ -119,7 +119,7 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=10)
     
     
     for i in 1:length(C)
-        if C_val[i] < EPS && lambda[i] == 0.0
+        if C_val[i] > EPS && lambda[i] == 0.0
             rho_s[i] = 0
         else
             rho_s[i] = rho[i]
@@ -127,7 +127,7 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=10)
     end
 
     for i in 1:length(C)
-        if C_val[i] >= EPS
+        if C_val[i] <= EPS
             done = false
             return rho, rho_s, done
         end

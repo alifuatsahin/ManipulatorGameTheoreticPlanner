@@ -33,17 +33,17 @@ const F2 = [1 0; -1 0; 0 1; 0 -1]
 const f2 = [l4/2; l4/2; w/2; w/2]
 
 # Number of constraints
-nce = 4
-nci = 24
+nce = 2
+nci = 14
 n = nce + nci
 
 # State dims
-state_dim = 32
+state_dim = 24
 
 # Cost Matrices
-R = [20 0 0 0; 0 20 0 0; 0 0 20 0; 0 0 0 20]
-Q1 = [50 0 0 0; 0 50 0 0; 0 0 0 0; 0 0 0 0]
-Q2 = [0 0 0 0; 0 0 0 0; 0 0 50 0; 0 0 0 50]
+R = [0.1 0 0 0; 0 0.1 0 0; 0 0 0.1 0; 0 0 0 0.1]
+Q1 = [10 0 0 0; 0 10 0 0; 0 0 0 0; 0 0 0 0]
+Q2 = [0 0 0 0; 0 0 0 0; 0 0 10 0; 0 0 0 10]
 
 # Reference
 θ_ref = [pi/4, pi/4, 5*pi/6, 5*pi/6]
@@ -65,7 +65,7 @@ I_rho = Diagonal(ρ)
 θ_init = [3*pi/4, 3*pi/4, pi/6, pi/6]
 
 # constraints
-states_n = 14
+states_n = 10
 
 x_init = generate_trajectory(θ_init, θ_ref, state_dim, N, dt)
 
@@ -73,8 +73,8 @@ x_init = warm_start(x_init, l1, l2, l3, l4, d)
 
 @variables x[1:N, 1:state_dim]
 
-x1 = vcat([x[i, vcat(1:6, 9:16)]' for i in 1:N]...)
-x2 = vcat([x[i, vcat(1:4, 7:8, 17:24)]' for i in 1:N]...)
+x1 = vcat([x[i, vcat(1:6, 9:12)]' for i in 1:N]...)
+x2 = vcat([x[i, vcat(1:4, 7:8, 13:16)]' for i in 1:N]...)
 
 x_flat = [x'...]
 x1_flat = [x1'...]
