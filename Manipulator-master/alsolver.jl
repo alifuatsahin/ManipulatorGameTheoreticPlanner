@@ -95,7 +95,7 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
     return lambda
 end
 
-function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=10)
+function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, nci, nce, N, gamma=10)
     rho = rho * gamma
     EPS = 1e-3
     y_flat = [y'...]
@@ -119,20 +119,29 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, gamma=10)
     
     
     for i in 1:length(C)
-        if C_val[i] > EPS && lambda[i] == 0.0
+        if C_val[i] > EPS && lambda[i] == 0.0 && i <= nci*N
             rho_s[i] = 0
         else
             rho_s[i] = rho[i]
         end
     end
+    
+    done = true
 
-    for i in 1:length(C)
-        if C_val[i] <= EPS
-            done = false
-            return rho, rho_s, done
+    if nci > 0
+        for i in 1:nci*N
+            if C_val[i] <= EPS
+                done = false
+            end
         end
     end
-    done = true
+    if nce > 0
+        for i in (nci*N)+1:(nci+nce)*N
+            if abs(C_val[i]) > EPS
+                done = false
+            end
+        end
+    end
     return rho, rho_s, done
 end
 
@@ -151,7 +160,7 @@ function alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, n
         animate_robots(int_y_1, int_y_2, int_y_3, int_y_4, d, l1, l2, l3, l4, w)
 
         lambda = dual_ascent(y, x_flat, lambda, rho_s, C, nce, nci, N)
-        rho, rho_s, done = increasing_schedule(rho, rho_s, lambda, C, y, x_flat)
+        rho, rho_s, done = increasing_schedule(rho, rho_s, lambda, C, y, x_flat, nci, nce, N)
         iter += 1
     end
     return y

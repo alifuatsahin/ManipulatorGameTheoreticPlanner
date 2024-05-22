@@ -60,9 +60,7 @@ function warm_start(x_init, l1, l2, l3, l4, d)
         x_sol1, x_sol2, _ = solve_optimization(th1, th2, th3, th4, l1, l2, l3, l4, d)
         
         x_init[i, 9:12] = x_sol1
-        x_init[i, 17:20] = x_sol1
         x_init[i, 13:16] = x_sol2
-        x_init[i, 21:24] = x_sol2
     end
     return x_init
 end

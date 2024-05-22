@@ -41,15 +41,15 @@ n = nce + nci
 state_dim = 24
 
 # Cost Matrices
-R = [0.1 0 0 0; 0 0.1 0 0; 0 0 0.1 0; 0 0 0 0.1]
-Q1 = [10 0 0 0; 0 10 0 0; 0 0 0 0; 0 0 0 0]
-Q2 = [0 0 0 0; 0 0 0 0; 0 0 10 0; 0 0 0 10]
+R = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]
+Q1 = [20 0 0 0; 0 20 0 0; 0 0 0 0; 0 0 0 0]
+Q2 = [0 0 0 0; 0 0 0 0; 0 0 20 0; 0 0 0 20]
 
 # Reference
 θ_ref = [pi/4, pi/4, 5*pi/6, 5*pi/6]
 
 # Discretization
-dt = 0.2 # seconds [s]
+dt = 0.1 # seconds [s]
 horizon = 4 # seconds [s]
 N = convert(Int64, horizon/dt) # number of time steps
 
