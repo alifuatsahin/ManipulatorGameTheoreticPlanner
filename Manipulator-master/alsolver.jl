@@ -19,7 +19,7 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter, s
             H_val_damped = H_val + damping * I(size(H_val, 1))
             
             # Compute the step direction
-            δy = - inv(H_val_damped) * (G_val)
+            δy = - inv(H_val_damped) * (G_val + damping * x_flat_val)
         
             α = line_search(x_flat_val, lambda, rho, flat, G_val, δy)
             
@@ -83,14 +83,16 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
     vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
     satisfied = false
+    EPS = 1e-3
     max_C_vals = zeros(N)
     if nci > 0
         for i in 1:nci*N
             if i % nci == 5
-                satisfied = all(C_val[i:i+9] .< 0)
+                hor_idx = Int(i % nci / 5)
+                satisfied = all(C_val[i:i+9] .< EPS) && all(abs.(C_val[nci*N + nce*((hor_idx)-1) + 1:nci*N + nce*(hor_idx)]) .<= EPS)
                 if !satisfied
-                    C_val[i:i+9] .= max(C_val[i:i+9])
-                    max_C_vals[Int((i+9)/nci)] = max(C_val[i:i+9])
+                    C_val[i:i+9] .= maximum(C_val[i:i+9])
+                    max_C_vals[Int((i+9)/nci)] = maximum(C_val[i:i+9])
                 end
             end
             if i % nci > 4 && satisfied
@@ -103,11 +105,14 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
         end
     end
     if nce > 0
-        index = 1
+        idx = 1
         for i in (nci*N)+1:(nci+nce)*N
-            lambda[i] = lambda[i] + rho[i] * max_C_vals[index]
+            lambda[i] = lambda[i] + rho[i] * max_C_vals[idx]
             if i % nce == 0
-                index += 1
+                idx += 1
+            end 
+            if idx == 10
+                break
             end 
         end
     end
@@ -169,7 +174,7 @@ function alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, n
     y = x_init
     rho_s = rho
     done = false
-    max_iter_o = 5
+    max_iter_o = 1
     iter = 0
     while !done && iter < max_iter_o
         y = newton_method(y, lambda, rho_s, G, H, N, x_flat, λ, ρ, max_iter, state_dim)

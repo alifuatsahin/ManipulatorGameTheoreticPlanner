@@ -18,7 +18,7 @@ const l4 = 6.0
 const w = 1
 
 # Grounding distance
-const d = 20.0
+const d = 21.0
 
 # Object Matrices
 const H1 = [1 0; -1 0; 0 1; 0 -1]

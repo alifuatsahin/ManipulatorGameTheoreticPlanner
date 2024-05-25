@@ -4,7 +4,7 @@ end
 
 function player_cost(x, θ_ref, R, Q, N)
     cost = 0
-    for i in 1:N
+    for i in 5:N
         cost += (x[i, 1:4] - θ_ref)'*Q*(x[i, 1:4] - θ_ref)
     end
     for i in 1:N
@@ -44,7 +44,7 @@ function constraints(x, N, F1, f1, F2, f2, H1, h1, H2, h2)
     # TODO change R to parametric form
     for i in 1:N
 
-        append!(C, x[i, 5:8] .^2 - ones(4)*1.5^2)
+        append!(C, x[i, 5:8] .^2 - ones(4)*4.5^2)
 
         push!(C, ((H2*R1(x[i,2])*t2(x[i,1], x[i,2]) + h2)'* x[i,9:12] + (F2*R2(x[i,4])*t4(x[i,3], x[i,4]) + f2)'*x[i,13:16]))
 
@@ -55,7 +55,7 @@ function constraints(x, N, F1, f1, F2, f2, H1, h1, H2, h2)
     end
 
     for i in 1:N
-        append!(C,(R1T(x[i,2])*H2'*x[i,9:12] + R2(x[i,4])* F2'*x[i,13:16]))
+        append!(C,(R1T(x[i,2])*H2'*x[i,9:12] + R2T(x[i,4])* F2'*x[i,13:16]))
     end
     return C
 end
