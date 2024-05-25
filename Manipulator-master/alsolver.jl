@@ -84,9 +84,6 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
     if nci > 0
         for i in 1:nci*N
-<<<<<<< Updated upstream
-            lambda[i] = max(0, lambda[i] + rho[i] * C_val[i])
-=======
             if i % nci == 5
                 hor_idx = Int(i % nci / 5)
                 satisfied = all(C_val[i:i+9] .< EPS) && all(abs.(C_val[nci*N + nce*((hor_idx)-1) + 1:nci*N + nce*(hor_idx)]) .<= EPS)
@@ -102,21 +99,17 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
             else
                 lambda[i] = max(0, lambda[i] + rho[i] * C_val[i])
             end
->>>>>>> Stashed changes
         end
     end
     if nce > 0
         for i in (nci*N)+1:(nci+nce)*N
             lambda[i] = lambda[i] + rho[i] * C_val[i]
-<<<<<<< Updated upstream
-=======
             if i % nce == 0
                 idx += 1
             end 
             if idx == 10
                 break
             end 
->>>>>>> Stashed changes
         end
     end
     return lambda

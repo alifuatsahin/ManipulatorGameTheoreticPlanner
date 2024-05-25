@@ -41,15 +41,9 @@ n = nce + nci
 state_dim = 32
 
 # Cost Matrices
-<<<<<<< Updated upstream
-R = [20 0 0 0; 0 20 0 0; 0 0 20 0; 0 0 0 20]
-Q1 = [50 0 0 0; 0 50 0 0; 0 0 0 0; 0 0 0 0]
-Q2 = [0 0 0 0; 0 0 0 0; 0 0 50 0; 0 0 0 50]
-=======
 R = [0 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0]
 Q1 = [0 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0]
 Q2 = [0 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0]
->>>>>>> Stashed changes
 
 # Reference
 θ_ref = [pi/4, pi/4, 5*pi/6, 5*pi/6]
@@ -62,13 +56,8 @@ N = convert(Int64, horizon/dt) # number of time steps
 # Lagrangian Multipliers
 @variables λ[1:n*N]
 @variables ρ[1:n*N]
-<<<<<<< Updated upstream
-lambda = ones(n*N)*0.1
-rho  = ones(n*N)
-=======
 lambda = ones(n*N)*1
 rho  = ones(n*N)*0.2
->>>>>>> Stashed changes
 
 I_rho = Diagonal(ρ)
 
