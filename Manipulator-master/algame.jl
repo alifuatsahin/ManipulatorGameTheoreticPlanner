@@ -3,6 +3,7 @@ using Symbolics
 using StaticArrays
 using BlockDiagonals
 using LinearSolve
+using NLsolve
 
 include("utils.jl")
 include("alsolver.jl")
@@ -17,7 +18,7 @@ const l4 = 6.0
 const w = 1
 
 # Grounding distance
-const d = 20.0
+const d = 22.0
 
 # Object Matrices
 const H1 = [1 0; -1 0; 0 1; 0 -1]
@@ -49,15 +50,15 @@ Q2 = [0 0 0 0; 0 0 0 0; 0 0 20 0; 0 0 0 20]
 θ_ref = [pi/4, pi/4, 5*pi/6, 5*pi/6]
 
 # Discretization
-dt = 0.1 # seconds [s]
-horizon = 4 # seconds [s]
+dt = 0.2 # seconds [s]
+horizon = 2  # seconds [s]
 N = convert(Int64, horizon/dt) # number of time steps
 
 # Lagrangian Multipliers
 @variables λ[1:n*N]
 @variables ρ[1:n*N]
-lambda = ones(n*N)*0.1
-rho  = ones(n*N)
+lambda = ones(n*N)*0.2
+rho  = ones(n*N)*0.2
 
 I_rho = Diagonal(ρ)
 
@@ -113,18 +114,58 @@ for i in 1:N
 end
 
 H = Symbolics.jacobian(G, x_flat);
+
+# vals_lambda = Dict(λ[i] => lambda[i] for i in eachindex(λ))
+
+# vals_rho = Dict(ρ[i] => rho[i] for i in eachindex(ρ))
+
+# vals_rho_lambda = merge(vals_lambda, vals_rho)
+
+# G = Symbolics.value.(substitute.(G, (vals_rho_lambda,)));
+# H = Symbolics.value.(substitute.(H, (vals_rho_lambda,)));
+
+# G_func = build_function(G, x_flat; expression=Symbolics.Float64)[1];
+# G_num = eval(G_func);
+
+# H_func = build_function(H, x_flat; expression=Symbolics.Float64)[1];
+# H_num = eval(H_func);
+
+# Define the function for NLsolve
+# function G_nlsolve!(F, x)
+#     F .= G_num(x)
+# end
+
+# function H_nlsolve!(F, x)
+#     F .= H_num(x)
+# end
+
+# Define the initial guess
+# initial_guess = [x_init'...] # Flatten initial guess if necessary
+
+# Solve the system
+# result = nlsolve(G_nlsolve!, H_nlsolve!, initial_guess, method = :trust_region, show_trace = true)
+
+
 println("Symbolic Hessian Done")
 max_iter = 100
 
 y = alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, nce, N, state_dim)
 
 
-int_y_1 = generate_intermediate_points(y[:, 1], 2);
-int_y_2 = generate_intermediate_points(y[:, 2], 2);
-int_y_3 = generate_intermediate_points(y[:, 3], 2);
-int_y_4 = generate_intermediate_points(y[:, 4], 2);
+int_y_1 = generate_intermediate_points(y[:, 1], 8);
+int_y_2 = generate_intermediate_points(y[:, 2], 8);
+int_y_3 = generate_intermediate_points(y[:, 3], 8);
+int_y_4 = generate_intermediate_points(y[:, 4], 8);
 
 animate_robots(int_y_1, int_y_2, int_y_3, int_y_4, d, l1, l2, l3, l4, w)
 
 animate_robots(y[:, 1], y[:, 2], y[:, 3], y[:, 4], d, l1, l2, l3, l4, w)
 
+y_trimmed = y[1: 6, :]
+
+int_y_1_t = generate_intermediate_points(y_trimmed[:, 1], 15);
+int_y_2_t = generate_intermediate_points(y_trimmed[:, 2], 15);
+int_y_3_t = generate_intermediate_points(y_trimmed[:, 3], 15);
+int_y_4_t = generate_intermediate_points(y_trimmed[:, 4], 15);
+
+animate_robots(int_y_1_t, int_y_2_t, int_y_3_t, int_y_4_t, d, l1, l2, l3, l4, w)

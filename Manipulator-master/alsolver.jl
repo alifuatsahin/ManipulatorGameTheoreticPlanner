@@ -1,7 +1,7 @@
 include("plotting.jl")
 include("utils.jl")
 
-function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter, state_dim, initial_damping=1e-3, beta=2, tolerance=1)
+function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter, state_dim, initial_damping=1e-2, beta=2, tolerance=1)
     x_flat_val = [x_init'...]
     flat = vcat(x_flat, λ, ρ)
     damping = initial_damping
@@ -16,10 +16,10 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter, s
             H_val = convert(Matrix{Float64}, Symbolics.value.(substitute.(H, (vals,))))
             
             # Modify Hessian with damping factor for LM method
-            # H_val_damped = H_val + damping * I(size(H_val, 1))
+            H_val_damped = H_val + damping * I(size(H_val, 1))
             
             # Compute the step direction
-            δy = - pinv(H_val) * G_val
+            δy = - inv(H_val_damped) * (G_val + damping * x_flat_val)
         
             α = line_search(x_flat_val, lambda, rho, flat, G_val, δy)
             
