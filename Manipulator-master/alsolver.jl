@@ -82,9 +82,18 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
     y_flat = [y'...]
     vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
+    satisfied = false
     if nci > 0
         for i in 1:nci*N
-            lambda[i] = max(0, lambda[i] - rho[i] * C_val[i])
+            if i % nci == 5
+                satisfied = all(C_val[i:i+10] .< 0)
+            if i % nci > 4 && satisfied
+                lambda[i] = 0
+            elseif i % nci > 4
+                lambda[i] = lambda[i] + rho[i] * C_val[i]
+            else
+                lambda[i] = max(0, lambda[i] + rho[i] * C_val[i])
+            end
         end
     end
     if nce > 0
@@ -102,7 +111,7 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, nci, nce, N, gamm
     vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
 
-    positive_indices = findall(<(0), C_val)
+    positive_indices = findall(>(0), C_val)
     positive_values = C_val[positive_indices]
     
    
@@ -119,7 +128,8 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, nci, nce, N, gamm
     
     
     for i in 1:length(C)
-        if C_val[i] > EPS && lambda[i] == 0.0 && i <= nci*N
+        
+        if C_val[i] < EPS && lambda[i] == 0 && i <= nci*N
             rho_s[i] = 0
         else
             rho_s[i] = rho[i]
@@ -130,7 +140,7 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, nci, nce, N, gamm
 
     if nci > 0
         for i in 1:nci*N
-            if C_val[i] <= EPS
+            if C_val[i] >= EPS
                 done = false
             end
         end

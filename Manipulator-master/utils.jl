@@ -44,13 +44,13 @@ function constraints(x, N, F1, f1, F2, f2, H1, h1, H2, h2)
     # TODO change R to parametric form
     for i in 1:N
 
-        append!(C, -x[i, 5:8] .^2 + ones(4)*4.5^2)
+        append!(C, x[i, 5:8] .^2 - ones(4)*4.5^2)
 
-        push!(C, (-(H2*R1(x[i,2])*t2(x[i,1], x[i,2]) + h2)'* x[i,9:12] - (F2*R2(x[i,4])*t4(x[i,3], x[i,4]) + f2)'*x[i,13:16]))
+        push!(C, ((H2*R1(x[i,2])*t2(x[i,1], x[i,2]) + h2)'* x[i,9:12] + (F2*R2(x[i,4])*t4(x[i,3], x[i,4]) + f2)'*x[i,13:16]))
 
-        append!(C, x[i,9:16])
+        append!(C, -x[i,9:16])
 
-        push!(C, (-symbolic_norm(F2'*x[i,13:16]) + 1))
+        push!(C, (symbolic_norm(F2'*x[i,13:16]) - 1))
 
     end
 
