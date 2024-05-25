@@ -90,6 +90,7 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
                 if !satisfied
                     C_val[i:i+10] .= max(C_val[i:i+10])
                 end
+            end
             if i % nci > 4 && satisfied
                 lambda[i] = 0
             elseif i % nci > 4
