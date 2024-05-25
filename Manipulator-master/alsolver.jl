@@ -82,25 +82,20 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
     y_flat = [y'...]
     vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
-    satisfied = false
     EPS = 1e-3
-    max_C_vals = zeros(N)
+    max_C_vals = distance_convergence(nci, nce, C_val, N, EPS)
     if nci > 0
+        idx = 1
         for i in 1:nci*N
-            if i % nci == 5
-                hor_idx = Int(i % nci / 5)
-                satisfied = all(C_val[i:i+9] .< EPS) && all(abs.(C_val[nci*N + nce*((hor_idx)-1) + 1:nci*N + nce*(hor_idx)]) .<= EPS)
-                if !satisfied
-                    C_val[i:i+9] .= maximum(C_val[i:i+9])
-                    max_C_vals[Int((i+9)/nci)] = maximum(C_val[i:i+9])
-                end
-            end
-            if i % nci > 4 && satisfied
+            if i % nci > 4 && max_C_vals[idx] == 0
                 lambda[i] = 0
             elseif i % nci > 4
-                lambda[i] = lambda[i] + rho[i] * C_val[i]
+                lambda[i] = lambda[i] + rho[i] * C_val[idx]
             else
                 lambda[i] = max(0, lambda[i] + rho[i] * C_val[i])
+            end
+            if i % nci == 0
+                idx += 1
             end
         end
     end
@@ -150,7 +145,32 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, nci, nce, N, gamm
             rho_s[i] = rho[i]
         end
     end
+
+    done = convergence_check(nci, nce, C_val, N, EPS)
     
+    return rho, rho_s, done
+end
+
+function distance_convergence(nci, nce, C_val, N, EPS=1e-3)
+    lambda_update = zeros(N)
+    if nci > 0
+        for i in 1:N
+            if all(C_val[(i-1)*nci + 5: i*nci] .< EPS)
+                lambda_update[i] = 0
+            else
+                lambda_update[i] = maximum(C_val[(i-1)*nci + 5: i*nci])
+            end
+        end
+    if nce > 0
+        for i in 1:N
+            if all(abs.(C_val[nci*N + nce*(i-1) + 1:nci*N + nce*i]) .>= EPS)
+                lambda_update[i] = maximum(lambda_update[i], maximum(abs.(C_val[nci*N + nce*(i-1) + 1:nci*N + nce*i])))
+            end
+        end
+    return lambda_update
+    end
+
+function convergence_check(nci, nce, C_val, N, EPS=1e-3)
     done = true
 
     if nci > 0
@@ -166,9 +186,9 @@ function increasing_schedule(rho, rho_s, lambda, C, y, x_flat, nci, nce, N, gamm
                 done = false
             end
         end
+
+    return done
     end
-    return rho, rho_s, done
-end
 
 function alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, nce, N, state_dim)
     y = x_init
