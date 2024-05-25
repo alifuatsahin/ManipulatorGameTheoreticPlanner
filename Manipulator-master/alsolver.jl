@@ -1,7 +1,7 @@
 include("plotting.jl")
 include("utils.jl")
 
-function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter, state_dim, initial_damping=1e-2, beta=2, tolerance=1)
+function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter, state_dim, initial_damping=1e-3, beta=2, tolerance=1)
     x_flat_val = [x_init'...]
     flat = vcat(x_flat, λ, ρ)
     damping = initial_damping
@@ -19,7 +19,7 @@ function newton_method(x_init, lambda, rho, G, H, N, x_flat, λ, ρ, max_iter, s
             H_val_damped = H_val + damping * I(size(H_val, 1))
             
             # Compute the step direction
-            δy = - inv(H_val_damped) * (G_val + damping * x_flat_val)
+            δy = - inv(H_val_damped) * (G_val)
         
             α = line_search(x_flat_val, lambda, rho, flat, G_val, δy)
             
@@ -83,12 +83,14 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
     vals = Dict(x_flat[i] => y_flat[i] for i in eachindex(x_flat))
     C_val = convert(Vector{Float64}, Symbolics.value.(substitute.(C, (vals,))))
     satisfied = false
+    max_C_vals = zeros(N)
     if nci > 0
         for i in 1:nci*N
             if i % nci == 5
-                satisfied = all(C_val[i:i+10] .< 0)
+                satisfied = all(C_val[i:i+9] .< 0)
                 if !satisfied
-                    C_val[i:i+10] .= max(C_val[i:i+10])
+                    C_val[i:i+9] .= max(C_val[i:i+9])
+                    max_C_vals[Int((i+9)/nci)] = max(C_val[i:i+9])
                 end
             end
             if i % nci > 4 && satisfied
@@ -101,8 +103,12 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
         end
     end
     if nce > 0
+        index = 1
         for i in (nci*N)+1:(nci+nce)*N
-            lambda[i] = lambda[i] + rho[i] * C_val[i]
+            lambda[i] = lambda[i] + rho[i] * max_C_vals[index]
+            if i % nce == 0
+                index += 1
+            end 
         end
     end
     return lambda

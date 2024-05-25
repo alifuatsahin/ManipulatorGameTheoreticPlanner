@@ -18,7 +18,7 @@ const l4 = 6.0
 const w = 1
 
 # Grounding distance
-const d = 22.0
+const d = 20.0
 
 # Object Matrices
 const H1 = [1 0; -1 0; 0 1; 0 -1]
@@ -43,8 +43,8 @@ state_dim = 24
 
 # Cost Matrices
 R = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]
-Q1 = [20 0 0 0; 0 20 0 0; 0 0 0 0; 0 0 0 0]
-Q2 = [0 0 0 0; 0 0 0 0; 0 0 20 0; 0 0 0 20]
+Q1 = [40 0 0 0; 0 40 0 0; 0 0 0 0; 0 0 0 0]
+Q2 = [0 0 0 0; 0 0 0 0; 0 0 40 0; 0 0 0 40]
 
 # Reference
 θ_ref = [pi/4, pi/4, 5*pi/6, 5*pi/6]
@@ -114,36 +114,6 @@ for i in 1:N
 end
 
 H = Symbolics.jacobian(G, x_flat);
-
-# vals_lambda = Dict(λ[i] => lambda[i] for i in eachindex(λ))
-
-# vals_rho = Dict(ρ[i] => rho[i] for i in eachindex(ρ))
-
-# vals_rho_lambda = merge(vals_lambda, vals_rho)
-
-# G = Symbolics.value.(substitute.(G, (vals_rho_lambda,)));
-# H = Symbolics.value.(substitute.(H, (vals_rho_lambda,)));
-
-# G_func = build_function(G, x_flat; expression=Symbolics.Float64)[1];
-# G_num = eval(G_func);
-
-# H_func = build_function(H, x_flat; expression=Symbolics.Float64)[1];
-# H_num = eval(H_func);
-
-# Define the function for NLsolve
-# function G_nlsolve!(F, x)
-#     F .= G_num(x)
-# end
-
-# function H_nlsolve!(F, x)
-#     F .= H_num(x)
-# end
-
-# Define the initial guess
-# initial_guess = [x_init'...] # Flatten initial guess if necessary
-
-# Solve the system
-# result = nlsolve(G_nlsolve!, H_nlsolve!, initial_guess, method = :trust_region, show_trace = true)
 
 
 println("Symbolic Hessian Done")
