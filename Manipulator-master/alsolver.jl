@@ -165,7 +165,7 @@ function distance_convergence(nci, nce, C_val, N, EPS=1e-3)
     if nce > 0
         for i in 1:N
             if all(abs.(C_val[nci*N + nce*(i-1) + 1:nci*N + nce*i]) .>= EPS)
-                lambda_update[i] = maximum(lambda_update[i], maximum(abs.(C_val[nci*N + nce*(i-1) + 1:nci*N + nce*i])))
+                lambda_update[i] = max(lambda_update[i], maximum(abs.(C_val[nci*N + nce*(i-1) + 1:nci*N + nce*i])))
             end
         end
     end 
@@ -196,7 +196,7 @@ function alsolver(lambda, rho, x_init, x_flat, λ, ρ, C, G, H, max_iter, nci, n
     y = x_init
     rho_s = rho
     done = false
-    max_iter_o = 1
+    max_iter_o = 3
     iter = 0
     while !done && iter < max_iter_o
         y = newton_method(y, lambda, rho_s, G, H, N, x_flat, λ, ρ, max_iter, state_dim)

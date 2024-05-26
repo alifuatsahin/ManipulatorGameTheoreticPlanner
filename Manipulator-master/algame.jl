@@ -57,8 +57,8 @@ N = convert(Int64, horizon/dt) # number of time steps
 # Lagrangian Multipliers
 @variables λ[1:n*N]
 @variables ρ[1:n*N]
-lambda = ones(n*N)*0.2
-rho  = ones(n*N)*0.2
+lambda = ones(n*N)*0.1
+rho  = ones(n*N)*0.1
 
 I_rho = Diagonal(ρ)
 
