@@ -161,12 +161,14 @@ function distance_convergence(nci, nce, C_val, N, EPS=1e-3)
                 lambda_update[i] = maximum(C_val[(i-1)*nci + 5: i*nci])
             end
         end
+    end 
     if nce > 0
         for i in 1:N
             if all(abs.(C_val[nci*N + nce*(i-1) + 1:nci*N + nce*i]) .>= EPS)
                 lambda_update[i] = maximum(lambda_update[i], maximum(abs.(C_val[nci*N + nce*(i-1) + 1:nci*N + nce*i])))
             end
         end
+    end 
     return lambda_update
     end
 
@@ -186,7 +188,7 @@ function convergence_check(nci, nce, C_val, N, EPS=1e-3)
                 done = false
             end
         end
-
+    end 
     return done
     end
 
