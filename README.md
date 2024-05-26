@@ -14,6 +14,11 @@ GamePlanManipulator is a project that explores game theoretic approaches to moti
 2. Install dependencies: `pip install -r requirements.txt`
 3. Run the main script to start the simulation or experiment with different configurations and parameters.
 
+## Sample Trajectories
+![animation5](https://github.com/alifuatsahin/ManipulatorGameTheoreticPlanner/assets/69372260/0f524ea9-373b-4160-bb95-24225d750202)
+![animation9](https://github.com/alifuatsahin/ManipulatorGameTheoreticPlanner/assets/69372260/eb9382ff-c1d7-470f-9cf7-9a200d762e8e)
+
+
 ## Contribution
 Contributions to GamePlanManipulator are welcome! Whether it's bug fixes, new features, or improvements to existing algorithms, feel free to fork the repository and submit a pull request.
 
