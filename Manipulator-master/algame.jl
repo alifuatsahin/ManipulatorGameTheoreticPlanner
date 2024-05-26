@@ -58,7 +58,7 @@ N = convert(Int64, horizon/dt) # number of time steps
 @variables λ[1:n*N]
 @variables ρ[1:n*N]
 lambda = ones(n*N)*0.1
-rho  = ones(n*N)*0.1
+rho  = ones(n*N)*1
 
 I_rho = Diagonal(ρ)
 

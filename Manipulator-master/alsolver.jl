@@ -90,7 +90,7 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
             if i % nci > 4 && max_C_vals[idx] == 0
                 lambda[i] = 0
             elseif i % nci > 4
-                lambda[i] = lambda[i] + rho[i] * C_val[idx]
+                lambda[i] = lambda[i] + rho[i] * C_val[i]
             else
                 lambda[i] = max(0, lambda[i] + rho[i] * C_val[i])
             end
@@ -102,7 +102,7 @@ function dual_ascent(y, x_flat, lambda, rho, C, nci, nce, N)
     if nce > 0
         idx = 1
         for i in (nci*N)+1:(nci+nce)*N
-            lambda[i] = lambda[i] + rho[i] * max_C_vals[idx]
+            lambda[i] = lambda[i] + rho[i] * C_val[i]
             if i % nce == 0
                 idx += 1
             end 
