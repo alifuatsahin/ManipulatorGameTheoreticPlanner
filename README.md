@@ -28,4 +28,7 @@ This project is licensed under the [MIT License](LICENSE.txt).
 ## References
 
 [1] A. F. Soliman, H. F. Hassan, A. H. M. Elaraby, and M. M. Hafez, "Game theoretic motion planning for serial manipulators sharing the same workspace," in IEEE Transactions on Robotics, vol. 36, no. 3, pp. 847-858, 2020.
+
 [2] A. P. Sanath et al., "UAV fleet task allocation with reinforcement learning using Dirichlet policy," arXiv:1910.09713 [cs.RO], October 2019.
+
+[3] S. Le Cleac’h, M. Schwager, and Z. Manchester, "ALGAMES: A Fast Solver for Constrained Dynamic Games," Robotics: Science and Systems XVI, Jul. 2020. DOI: 10.15607/rss.2020.xvi.091.
